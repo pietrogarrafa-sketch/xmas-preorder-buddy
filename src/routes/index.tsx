@@ -36,15 +36,19 @@ import {
   INCLUDED_STARTER,
   EMPTY_BOOKING,
   LOBSTER_SUPPLEMENT,
+  PRICE_PER_CHILD,
   PRICE_PER_PERSON,
+  SERVICE_DATE_LABEL,
   formatMoney,
   guestPrice,
+  isChild,
   mainLabel,
   orderTotal,
   type Booking,
   type CookingLevel,
   type Dish,
   type Guest,
+  type GuestKind,
 } from "@/lib/menu";
 import { downloadOrderPdf, orderAsText } from "@/lib/order-export";
 
