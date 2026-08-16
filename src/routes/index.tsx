@@ -331,6 +331,34 @@ function PreOrderPage() {
           ) : null}
         </div>
 
+        <div className="mt-4">
+          <Field label="Menu">
+            <div className="inline-flex rounded-lg border p-1">
+              {(["adult", "child"] as GuestKind[]).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() =>
+                    setDraft((d) =>
+                      d.kind === k
+                        ? d
+                        : { ...d, kind: k, starter: "", main: "", dessert: "", cooking: undefined, lobster: false },
+                    )
+                  }
+                  aria-pressed={draft.kind === k}
+                  className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+                    draft.kind === k ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {k === "adult"
+                    ? `Adulto · ${formatMoney(PRICE_PER_PERSON)}`
+                    : `Bambino · ${formatMoney(PRICE_PER_CHILD)}`}
+                </button>
+              ))}
+            </div>
+          </Field>
+        </div>
+
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Guest name">
             <Input
@@ -351,13 +379,27 @@ function PreOrderPage() {
         </div>
 
         <div className="mt-6 space-y-6">
-          <div className="rounded-xl border border-accent/50 bg-accent/10 px-4 py-3">
-            <p className="text-xs uppercase tracking-widest text-accent">Included for everyone</p>
-            <p className="mt-1 text-sm font-semibold">{INCLUDED_STARTER.name}</p>
-            <p className="text-xs text-muted-foreground">{INCLUDED_STARTER.description}</p>
-          </div>
-          <DishPicker course="starter" selected={draft.starter} onSelect={pickDish("starter")} />
-          <DishPicker course="main" selected={draft.main} onSelect={pickDish("main")} />
+          {draft.kind === "adult" ? (
+            <div className="rounded-xl border border-accent/50 bg-accent/10 px-4 py-3">
+              <p className="text-xs uppercase tracking-widest text-accent">Included for everyone</p>
+              <p className="mt-1 text-sm font-semibold">{INCLUDED_STARTER.name}</p>
+              <p className="text-xs text-muted-foreground">{INCLUDED_STARTER.description}</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-accent/50 bg-accent/10 px-4 py-3">
+              <p className="text-xs uppercase tracking-widest text-accent">Children's menu</p>
+              <p className="mt-1 text-sm font-semibold">
+                {formatMoney(PRICE_PER_CHILD)} per child · below 12 years old
+              </p>
+            </div>
+          )}
+          <DishPicker
+            course="starter"
+            kind={draft.kind}
+            selected={draft.starter}
+            onSelect={pickDish("starter")}
+          />
+          <DishPicker course="main" kind={draft.kind} selected={draft.main} onSelect={pickDish("main")} />
 
           {draft.main && (draft.cooking || draft.lobster) ? (
             <button
@@ -369,8 +411,14 @@ function PreOrderPage() {
               {draft.lobster ? ` · + Half Lobster (+£${LOBSTER_SUPPLEMENT})` : ""} — tap to change
             </button>
           ) : null}
-          <DishPicker course="dessert" selected={draft.dessert} onSelect={pickDish("dessert")} />
+          <DishPicker
+            course="dessert"
+            kind={draft.kind}
+            selected={draft.dessert}
+            onSelect={pickDish("dessert")}
+          />
         </div>
+
 
         <div className="mt-6 flex flex-wrap gap-2">
           <Button onClick={saveGuest} disabled={!draftReady} size="lg">
