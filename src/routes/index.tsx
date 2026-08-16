@@ -33,6 +33,7 @@ import { SteakDialog } from "@/components/preorder/SteakDialog";
 import { KitchenSummary } from "@/components/preorder/KitchenSummary";
 import {
   DEPOSIT_PER_PERSON,
+  INCLUDED_STARTER,
   EMPTY_BOOKING,
   LOBSTER_SUPPLEMENT,
   PRICE_PER_PERSON,
