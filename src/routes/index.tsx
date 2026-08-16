@@ -567,10 +567,14 @@ function PreOrderPage() {
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="font-display">How to take a pre-order</DialogTitle>
-            <DialogDescription>Christmas Day set menu — {formatMoney(PRICE_PER_PERSON)} per person.</DialogDescription>
+            <DialogDescription>
+              {SERVICE_DATE_LABEL} — {formatMoney(PRICE_PER_PERSON)} per person,{" "}
+              {formatMoney(PRICE_PER_CHILD)} per child.
+            </DialogDescription>
           </DialogHeader>
           <ol className="list-decimal space-y-2 pl-5 text-sm">
-            <li>Fill in the booking details (customer, date, time, contact).</li>
+            <li>Fill in the booking details (customer, time, contact) — the date is always 25 December.</li>
+            <li>Choose Adulto or Bambino, then pick one Antipasto, one Secondo and one Dolce.</li>
             <li>Enter a guest name, then pick one Antipasto, one Secondo and one Dolce.</li>
             <li>
               For Filetto di Manzo choose the cooking temperature; Half Lobster in Garlic Butter can be
