@@ -23,12 +23,22 @@ export function KitchenSummary({ guests }: { guests: Guest[] }) {
   return (
     <div className="grid gap-6 sm:grid-cols-3">
       <p className="sm:col-span-3 rounded-lg border border-accent/50 bg-accent/10 px-3 py-2 text-sm font-medium">
-        {INCLUDED_STARTER.name} (incluso per tutti):{" "}
-        <span className="tabular-nums">{guests.length}</span>
+        {INCLUDED_STARTER.name} (incluso per tutti gli adulti):{" "}
+        <span className="tabular-nums">{summary.adultCount}</span>
       </p>
       <Block title="Antipasti" rows={summary.starters} />
       <Block title="Secondi" rows={summary.mains} />
       <Block title="Dolci" rows={summary.desserts} />
+      {summary.childCount > 0 ? (
+        <>
+          <p className="sm:col-span-3 border-t pt-4 text-sm font-semibold">
+            Menù bambini — <span className="tabular-nums">{summary.childCount}</span>
+          </p>
+          <Block title="Kids · Starters" rows={summary.kidsStarters} />
+          <Block title="Kids · Mains" rows={summary.kidsMains} />
+          <Block title="Kids · Desserts" rows={summary.kidsDesserts} />
+        </>
+      ) : null}
       {summary.lobsters > 0 ? (
         <p className="sm:col-span-3 text-sm font-medium">
           Half Lobster in Garlic Butter: <span className="tabular-nums">{summary.lobsters}</span>
