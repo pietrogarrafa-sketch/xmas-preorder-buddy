@@ -28,6 +28,8 @@ export function orderAsText(booking: Booking, guests: Guest[]) {
     "",
     ...bookingLines(booking, guests),
     "",
+    `INCLUDED FOR ALL: ${INCLUDED_STARTER.name} x ${guests.length}`,
+    "",
     "GUESTS",
   ];
 
