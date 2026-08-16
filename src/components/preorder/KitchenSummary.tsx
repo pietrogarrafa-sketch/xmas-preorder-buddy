@@ -1,4 +1,4 @@
-import { kitchenSummary, type Guest } from "@/lib/menu";
+import { INCLUDED_STARTER, kitchenSummary, type Guest } from "@/lib/menu";
 
 function Block({ title, rows }: { title: string; rows: [string, number][] }) {
   return (
@@ -22,7 +22,11 @@ export function KitchenSummary({ guests }: { guests: Guest[] }) {
 
   return (
     <div className="grid gap-6 sm:grid-cols-3">
-      <Block title="Entrée" rows={summary.starters} />
+      <p className="sm:col-span-3 rounded-lg border border-accent/50 bg-accent/10 px-3 py-2 text-sm font-medium">
+        {INCLUDED_STARTER.name} (incluso per tutti):{" "}
+        <span className="tabular-nums">{guests.length}</span>
+      </p>
+      <Block title="Antipasti" rows={summary.starters} />
       <Block title="Secondi" rows={summary.mains} />
       <Block title="Dolci" rows={summary.desserts} />
       {summary.lobsters > 0 ? (

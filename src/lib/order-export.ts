@@ -1,5 +1,6 @@
 import {
   DEPOSIT_PER_PERSON,
+  INCLUDED_STARTER,
   formatMoney,
   guestPrice,
   kitchenSummary,
@@ -27,12 +28,14 @@ export function orderAsText(booking: Booking, guests: Guest[]) {
     "",
     ...bookingLines(booking, guests),
     "",
+    `INCLUDED FOR ALL: ${INCLUDED_STARTER.name} x ${guests.length}`,
+    "",
     "GUESTS",
   ];
 
   guests.forEach((g, i) => {
     lines.push(`${i + 1}. ${g.name} — ${formatMoney(guestPrice(g))}`);
-    lines.push(`   Entrée: ${g.starter}`);
+    lines.push(`   Antipasti: ${g.starter}`);
     lines.push(`   Secondo: ${mainLabel(g)}`);
     lines.push(`   Dolce: ${g.dessert}`);
     if (g.notes?.trim()) lines.push(`   Notes: ${g.notes.trim()}`);
@@ -82,7 +85,7 @@ export async function downloadOrderPdf(booking: Booking, guests: Guest[]) {
   line("Guest Orders", 14, "bold", 22);
   guests.forEach((g, i) => {
     line(`${i + 1}. ${g.name}  —  ${formatMoney(guestPrice(g))}`, 12, "bold", 16);
-    line(`Entrée: ${g.starter}`);
+    line(`Antipasti: ${g.starter}`);
     line(`Secondo: ${mainLabel(g)}`);
     line(`Dolce: ${g.dessert}`);
     if (g.notes?.trim()) line(`Notes: ${g.notes.trim()}`);
@@ -108,7 +111,9 @@ export async function downloadOrderPdf(booking: Booking, guests: Guest[]) {
     y += 8;
   };
 
-  block("Entrée", summary.starters);
+  line(`${guests.length} x  ${INCLUDED_STARTER.name} (included for all)`, 11, "bold", 18);
+  y += 8;
+  block("Antipasti", summary.starters);
   block("Secondi", summary.mains);
   block("Dolci", summary.desserts);
   if (summary.lobsters) line(`${summary.lobsters} x  Half Lobster in Garlic Butter (extra)`, 11, "bold", 18);
