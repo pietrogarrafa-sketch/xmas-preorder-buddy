@@ -94,6 +94,30 @@ export const MENU: Record<Course, Dish[]> = {
   ],
 };
 
+/** Children's menu — under 12 years old. */
+export const KIDS_MENU: Record<Course, Dish[]> = {
+  starter: [
+    { name: "Garlic Cheese Bruschetta", vegetarian: true },
+    {
+      name: "Mini Vegetable Cocktail",
+      description: "Tomatoes, cucumber and carrots with hummus",
+      vegetarian: true,
+    },
+    { name: "Polpette della Nonna", description: "Home-made meatballs" },
+  ],
+  main: [
+    { name: "Small Turkey Dinner", description: "Turkey with chestnut stuffing and all the trimmings" },
+    { name: "Penne Napoli", vegetarian: true },
+    { name: "Margherita Pizza", vegetarian: true },
+    { name: "Penne Bolognese" },
+    { name: "Chicken Goujons & Chips" },
+  ],
+  dessert: [
+    { name: "Profiteroles" },
+    { name: "Biscoff Sundae" },
+    { name: "Chocolate, Vanilla or Strawberry Ice Cream" },
+  ],
+};
 
 export const COURSE_LABEL: Record<Course, string> = {
   starter: "Antipasti",
@@ -101,9 +125,12 @@ export const COURSE_LABEL: Record<Course, string> = {
   dessert: "Dolci",
 };
 
+export type GuestKind = "adult" | "child";
+
 export type Guest = {
   id: string;
   name: string;
+  kind?: GuestKind | undefined;
   starter: string;
   main: string;
   dessert: string;
@@ -112,18 +139,27 @@ export type Guest = {
   notes?: string | undefined;
 };
 
+export function isChild(guest: Guest) {
+  return guest.kind === "child";
+}
+
+export function menuFor(kind: GuestKind) {
+  return kind === "child" ? KIDS_MENU : MENU;
+}
+
 export type Booking = {
   customerName: string;
-  date: string;
   time: string;
   phone: string;
   email: string;
   tableNotes: string;
 };
 
+export const SERVICE_DATE = "2026-12-25";
+export const SERVICE_DATE_LABEL = "Friday 25 December 2026";
+
 export const EMPTY_BOOKING: Booking = {
   customerName: "",
-  date: "2026-12-25",
   time: "13:00",
   phone: "",
   email: "",
@@ -131,6 +167,7 @@ export const EMPTY_BOOKING: Booking = {
 };
 
 export function guestPrice(guest: Guest) {
+  if (isChild(guest)) return PRICE_PER_CHILD;
   return PRICE_PER_PERSON + (guest.lobster ? LOBSTER_SUPPLEMENT : 0);
 }
 
@@ -149,9 +186,9 @@ export function formatMoney(value: number) {
 
 /** Aggregated dish counts for the kitchen. */
 export function kitchenSummary(guests: Guest[]) {
-  const build = (get: (g: Guest) => string) => {
+  const build = (list: Guest[], get: (g: Guest) => string) => {
     const map = new Map<string, number>();
-    for (const g of guests) {
+    for (const g of list) {
       const key = get(g);
       if (!key) continue;
       map.set(key, (map.get(key) ?? 0) + 1);
@@ -159,11 +196,20 @@ export function kitchenSummary(guests: Guest[]) {
     return [...map.entries()].sort((a, b) => b[1] - a[1]);
   };
 
+  const adults = guests.filter((g) => !isChild(g));
+  const children = guests.filter(isChild);
+
   return {
-    starters: build((g) => g.starter),
-    mains: build((g) => (g.cooking ? `${g.main} — ${g.cooking}` : g.main)),
-    desserts: build((g) => g.dessert),
+    adultCount: adults.length,
+    childCount: children.length,
+    starters: build(adults, (g) => g.starter),
+    mains: build(adults, (g) => (g.cooking ? `${g.main} — ${g.cooking}` : g.main)),
+    desserts: build(adults, (g) => g.dessert),
+    kidsStarters: build(children, (g) => g.starter),
+    kidsMains: build(children, (g) => g.main),
+    kidsDesserts: build(children, (g) => g.dessert),
     lobsters: guests.filter((g) => g.lobster).length,
     notes: guests.filter((g) => g.notes?.trim()).map((g) => `${g.name}: ${g.notes!.trim()}`),
   };
 }
+
