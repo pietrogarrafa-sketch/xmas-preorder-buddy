@@ -1,4 +1,4 @@
-import { kitchenSummary, type Guest } from "@/lib/menu";
+import { INCLUDED_STARTER, kitchenSummary, type Guest } from "@/lib/menu";
 
 function Block({ title, rows }: { title: string; rows: [string, number][] }) {
   return (
