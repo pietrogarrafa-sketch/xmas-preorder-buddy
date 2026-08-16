@@ -22,7 +22,7 @@ export function KitchenSummary({ guests }: { guests: Guest[] }) {
 
   return (
     <div className="grid gap-6 sm:grid-cols-3">
-      <Block title="Entrée" rows={summary.starters} />
+      <Block title="Antipasti" rows={summary.starters} />
       <Block title="Secondi" rows={summary.mains} />
       <Block title="Dolci" rows={summary.desserts} />
       {summary.lobsters > 0 ? (

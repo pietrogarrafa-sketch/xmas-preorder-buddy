@@ -96,7 +96,7 @@ export const MENU: Record<Course, Dish[]> = {
 
 
 export const COURSE_LABEL: Record<Course, string> = {
-  starter: "Entrée",
+  starter: "Antipasti",
   main: "Secondi",
   dessert: "Dolci",
 };

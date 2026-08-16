@@ -383,7 +383,7 @@ function PreOrderPage() {
                         {index + 1}. {guest.name}
                       </p>
                       <dl className="mt-1 space-y-0.5 text-sm text-muted-foreground">
-                        <div>Entrée: {guest.starter}</div>
+                        <div>Antipasti: {guest.starter}</div>
                         <div>Secondo: {mainLabel(guest)}</div>
                         <div>Dolce: {guest.dessert}</div>
                         {guest.notes ? (
@@ -498,7 +498,7 @@ function PreOrderPage() {
           </DialogHeader>
           <ol className="list-decimal space-y-2 pl-5 text-sm">
             <li>Fill in the booking details (customer, date, time, contact).</li>
-            <li>Enter a guest name, then pick one Entrée, one Secondo and one Dolce.</li>
+            <li>Enter a guest name, then pick one Antipasto, one Secondo and one Dolce.</li>
             <li>
               For Filetto di Manzo choose the cooking temperature; Half Lobster in Garlic Butter can be
               added for +£{LOBSTER_SUPPLEMENT}.
