@@ -491,7 +491,10 @@ function PreOrderPage() {
             </ul>
 
             <div className="mt-5 space-y-1 border-t pt-4 text-sm">
-              <Row label={`Covers`} value={String(guests.length)} />
+              <Row
+                label="Covers"
+                value={`${guests.length} (${guests.filter((g) => !isChild(g)).length} adulti, ${guests.filter(isChild).length} bambini)`}
+              />
               <Row label="Total" value={formatMoney(total)} strong />
               <Row
                 label={`Deposit due (${formatMoney(DEPOSIT_PER_PERSON)} pp)`}
