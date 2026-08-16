@@ -253,8 +253,12 @@ function PreOrderPage() {
         <img src={logo.url} alt="La Casa restaurant" className="mx-auto h-20 w-auto object-contain" />
         <h1 className="script-title mt-4 text-5xl sm:text-6xl">Christmas Day 2026</h1>
         <p className="mt-2 text-xs uppercase tracking-[0.35em] text-muted-foreground">
-          Pre-order · {formatMoney(PRICE_PER_PERSON)} per person
+          {SERVICE_DATE_LABEL}
         </p>
+        <p className="mt-1 text-xs uppercase tracking-[0.35em] text-muted-foreground">
+          {formatMoney(PRICE_PER_PERSON)} pp · {formatMoney(PRICE_PER_CHILD)} bambini
+        </p>
+
         <div className="gold-rule mx-auto mt-5 w-40" />
         <Button
           variant="ghost"
