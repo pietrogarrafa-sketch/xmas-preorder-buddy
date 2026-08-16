@@ -1,8 +1,10 @@
 import {
   DEPOSIT_PER_PERSON,
   INCLUDED_STARTER,
+  SERVICE_DATE_LABEL,
   formatMoney,
   guestPrice,
+  isChild,
   kitchenSummary,
   mainLabel,
   orderTotal,
@@ -11,35 +13,40 @@ import {
 } from "./menu";
 
 function bookingLines(booking: Booking, guests: Guest[]) {
+  const children = guests.filter(isChild).length;
   return [
     `Customer: ${booking.customerName || "-"}`,
-    `Date: ${booking.date || "-"}   Time: ${booking.time || "-"}`,
+    `Date: ${SERVICE_DATE_LABEL}   Time: ${booking.time || "-"}`,
     `Phone: ${booking.phone || "-"}`,
     `Email: ${booking.email || "-"}`,
-    `Covers: ${guests.length}`,
+    `Covers: ${guests.length} (${guests.length - children} adults, ${children} children)`,
     booking.tableNotes ? `Table notes: ${booking.tableNotes}` : null,
   ].filter(Boolean) as string[];
 }
 
 export function orderAsText(booking: Booking, guests: Guest[]) {
   const total = orderTotal(guests);
+  const adults = guests.filter((g) => !isChild(g)).length;
   const lines: string[] = [
     "LA CASA — CHRISTMAS DAY PRE-ORDER 2026",
     "",
     ...bookingLines(booking, guests),
     "",
-    `INCLUDED FOR ALL: ${INCLUDED_STARTER.name} x ${guests.length}`,
+    `INCLUDED FOR ALL ADULTS: ${INCLUDED_STARTER.name} x ${adults}`,
     "",
     "GUESTS",
   ];
 
   guests.forEach((g, i) => {
-    lines.push(`${i + 1}. ${g.name} — ${formatMoney(guestPrice(g))}`);
+    lines.push(
+      `${i + 1}. ${g.name}${isChild(g) ? " (child)" : ""} — ${formatMoney(guestPrice(g))}`,
+    );
     lines.push(`   Antipasti: ${g.starter}`);
     lines.push(`   Secondo: ${mainLabel(g)}`);
     lines.push(`   Dolce: ${g.dessert}`);
     if (g.notes?.trim()) lines.push(`   Notes: ${g.notes.trim()}`);
   });
+
 
   lines.push("", `TOTAL: ${formatMoney(total)}`);
   lines.push(`Deposit due (${formatMoney(DEPOSIT_PER_PERSON)} pp): ${formatMoney(guests.length * DEPOSIT_PER_PERSON)}`);
