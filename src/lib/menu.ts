@@ -22,31 +22,78 @@ export type Dish = {
   steak?: boolean;
 };
 
+/** Served to every guest — no choice required. */
+export const INCLUDED_STARTER: Dish = {
+  name: "Arancino al Tartufo",
+  description: "Crispy truffle arancino, parmesan fondue and pecorino romano — served to all guests",
+};
+
 export const MENU: Record<Course, Dish[]> = {
   starter: [
-    { name: "Arancino al Tartufo", description: "Truffle risotto ball, parmesan fondue" },
-    { name: "Zuppa di Porro e Patate", description: "Leek & potato velouté", vegetarian: true },
-    { name: "Cocktail di Gamberetti", description: "Prawn cocktail, Marie Rose" },
-    { name: "Capesante Gratinate", description: "Gratinated scallops, herb crumb" },
-    { name: "Carpaccio di Manzo", description: "Beef carpaccio, rocket, parmesan" },
-    { name: "Gamberoni alla Busara", description: "King prawns, tomato & white wine" },
-    { name: "Tortino di Formaggio", description: "Warm cheese tart", vegetarian: true },
+    {
+      name: "Zuppa di Porro e Patate",
+      description: "Leek & potato soup, served with Italian bread",
+      vegetarian: true,
+    },
+    {
+      name: "Cocktail di Gamberetti",
+      description: "North Atlantic baby prawns, Marie Rose, lettuce, paprika, toasted bread & butter",
+    },
+    {
+      name: "Capesante Gratinate",
+      description: "Hand-dived scallops baked with garlic butter, Amalfi lemon and parsley crumb",
+    },
+    {
+      name: "Carpaccio di Manzo",
+      description: "Prime beef fillet carpaccio, truffle mayonnaise, aged parmesan, rocket, crispy capers",
+    },
+    {
+      name: "Gamberoni alla Busara",
+      description: "King prawns sautéed with garlic, chilli, cherry tomatoes and lobster bisque",
+    },
+    {
+      name: "Tortino di Formaggio",
+      description: "Filo tartlet, goat cheese & sundried tomatoes, home-made cranberry & raspberry dip",
+      vegetarian: true,
+    },
   ],
   main: [
-    { name: "Tacchino Natalizio", description: "Christmas turkey, all the trimmings" },
-    { name: "Filetto di Manzo", description: "Beef fillet, red wine jus", steak: true },
-    { name: "Branzino Natalizio", description: "Sea bass, saffron potatoes" },
-    { name: "Wellington ai Funghi", description: "Mushroom wellington", vegetarian: true },
-    { name: "Agnello in Crosta di Erbe", description: "Herb-crusted lamb" },
+    {
+      name: "Tacchino Natalizio",
+      description:
+        "Free-range turkey crown, chestnut stuffing, pigs in blankets, roast parsnips, sprouts, honey carrots, Italian gravy",
+    },
+    {
+      name: "Filetto di Manzo",
+      description: "Prime fillet steak, Madeira jus, seasonal vegetables",
+      steak: true,
+    },
+    {
+      name: "Branzino Natalizio",
+      description: "Pan-roasted sea bass fillet, king prawns, asparagus, lobster butter sauce",
+    },
+    {
+      name: "Wellington ai Funghi",
+      description: "Wild mushroom & chestnut wellington, creamy mushroom sauce, seasonal vegetables",
+      vegetarian: true,
+    },
+    {
+      name: "Agnello in Crosta di Erbe",
+      description: "Herb-crusted lamb cutlets, rosemary & red wine sauce, seasonal vegetables",
+    },
   ],
   dessert: [
-    { name: "Tiramisù Tradizionale" },
-    { name: "Profiteroles" },
-    { name: "Sicilian Pistachio Semifreddo" },
-    { name: "Classic Crème Brûlée" },
-    { name: "Christmas Pudding" },
+    { name: "Tiramisù Tradizionale", description: "Mascarpone cream, espresso and cocoa" },
+    { name: "Profiteroles", description: "Choux pastry filled with cream, rich chocolate sauce" },
+    {
+      name: "Sicilian Pistachio Semifreddo",
+      description: "Topped with crunchy pistachio crumb",
+    },
+    { name: "Classic Crème Brûlée", description: "Vanilla bean, caramelised sugar topping" },
+    { name: "Christmas Pudding", description: "Served warm with brandy sauce" },
   ],
 };
+
 
 export const COURSE_LABEL: Record<Course, string> = {
   starter: "Entrée",

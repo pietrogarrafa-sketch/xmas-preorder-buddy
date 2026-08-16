@@ -33,6 +33,7 @@ import { SteakDialog } from "@/components/preorder/SteakDialog";
 import { KitchenSummary } from "@/components/preorder/KitchenSummary";
 import {
   DEPOSIT_PER_PERSON,
+  INCLUDED_STARTER,
   EMPTY_BOOKING,
   LOBSTER_SUPPLEMENT,
   PRICE_PER_PERSON,
@@ -337,8 +338,14 @@ function PreOrderPage() {
         </div>
 
         <div className="mt-6 space-y-6">
+          <div className="rounded-xl border border-accent/50 bg-accent/10 px-4 py-3">
+            <p className="text-xs uppercase tracking-widest text-accent">Included for everyone</p>
+            <p className="mt-1 text-sm font-semibold">{INCLUDED_STARTER.name}</p>
+            <p className="text-xs text-muted-foreground">{INCLUDED_STARTER.description}</p>
+          </div>
           <DishPicker course="starter" selected={draft.starter} onSelect={pickDish("starter")} />
           <DishPicker course="main" selected={draft.main} onSelect={pickDish("main")} />
+
           {draft.main && (draft.cooking || draft.lobster) ? (
             <button
               type="button"
