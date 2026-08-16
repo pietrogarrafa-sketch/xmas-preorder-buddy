@@ -1,5 +1,6 @@
 import {
   DEPOSIT_PER_PERSON,
+  INCLUDED_STARTER,
   formatMoney,
   guestPrice,
   kitchenSummary,
