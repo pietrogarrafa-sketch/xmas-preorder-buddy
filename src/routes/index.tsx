@@ -446,6 +446,11 @@ function PreOrderPage() {
                     <div>
                       <p className="font-display text-base font-semibold">
                         {index + 1}. {guest.name}
+                        {isChild(guest) ? (
+                          <span className="ml-2 rounded-full border border-accent/60 px-2 py-0.5 text-[10px] uppercase tracking-widest text-accent">
+                            Bambino
+                          </span>
+                        ) : null}
                       </p>
                       <dl className="mt-1 space-y-0.5 text-sm text-muted-foreground">
                         <div>Antipasti: {guest.starter}</div>
