@@ -278,8 +278,11 @@ function PreOrderPage() {
             />
           </Field>
           <Field label="Date">
-            <Input type="date" value={booking.date} onChange={(e) => setField("date")(e.target.value)} />
+            <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm font-medium">
+              {SERVICE_DATE_LABEL}
+            </div>
           </Field>
+
           <Field label="Time">
             <Input type="time" value={booking.time} onChange={(e) => setField("time")(e.target.value)} />
           </Field>
