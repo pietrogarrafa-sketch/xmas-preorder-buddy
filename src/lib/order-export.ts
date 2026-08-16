@@ -91,7 +91,12 @@ export async function downloadOrderPdf(booking: Booking, guests: Guest[]) {
 
   line("Guest Orders", 14, "bold", 22);
   guests.forEach((g, i) => {
-    line(`${i + 1}. ${g.name}  —  ${formatMoney(guestPrice(g))}`, 12, "bold", 16);
+    line(
+      `${i + 1}. ${g.name}${isChild(g) ? "  (child)" : ""}  —  ${formatMoney(guestPrice(g))}`,
+      12,
+      "bold",
+      16,
+    );
     line(`Antipasti: ${g.starter}`);
     line(`Secondo: ${mainLabel(g)}`);
     line(`Dolce: ${g.dessert}`);
@@ -107,7 +112,7 @@ export async function downloadOrderPdf(booking: Booking, guests: Guest[]) {
   doc.addPage();
   y = margin;
   line("Kitchen Production Sheet", 18, "bold", 26);
-  line(`${booking.customerName || "Booking"} — ${booking.date} ${booking.time} — ${guests.length} covers`, 11, "normal", 22);
+  line(`${booking.customerName || "Booking"} — ${SERVICE_DATE_LABEL} ${booking.time} — ${guests.length} covers`, 11, "normal", 22);
   rule();
 
   const summary = kitchenSummary(guests);
@@ -118,12 +123,19 @@ export async function downloadOrderPdf(booking: Booking, guests: Guest[]) {
     y += 8;
   };
 
-  line(`${guests.length} x  ${INCLUDED_STARTER.name} (included for all)`, 11, "bold", 18);
+  line(`${summary.adultCount} x  ${INCLUDED_STARTER.name} (included for all adults)`, 11, "bold", 18);
   y += 8;
   block("Antipasti", summary.starters);
   block("Secondi", summary.mains);
   block("Dolci", summary.desserts);
+  if (summary.childCount) {
+    line(`CHILDREN'S MENU — ${summary.childCount} children`, 12, "bold", 20);
+    block("Kids starters", summary.kidsStarters);
+    block("Kids mains", summary.kidsMains);
+    block("Kids desserts", summary.kidsDesserts);
+  }
   if (summary.lobsters) line(`${summary.lobsters} x  Half Lobster in Garlic Butter (extra)`, 11, "bold", 18);
+
   if (summary.notes.length) {
     y += 8;
     line("ALLERGIES / NOTES", 12, "bold", 18);
