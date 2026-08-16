@@ -36,15 +36,19 @@ import {
   INCLUDED_STARTER,
   EMPTY_BOOKING,
   LOBSTER_SUPPLEMENT,
+  PRICE_PER_CHILD,
   PRICE_PER_PERSON,
+  SERVICE_DATE_LABEL,
   formatMoney,
   guestPrice,
+  isChild,
   mainLabel,
   orderTotal,
   type Booking,
   type CookingLevel,
   type Dish,
   type Guest,
+  type GuestKind,
 } from "@/lib/menu";
 import { downloadOrderPdf, orderAsText } from "@/lib/order-export";
 
@@ -72,6 +76,7 @@ const STORAGE_KEY = "lacasa-christmas-preorder-2026";
 
 type Draft = {
   name: string;
+  kind: GuestKind;
   starter: string;
   main: string;
   dessert: string;
@@ -82,6 +87,7 @@ type Draft = {
 
 const EMPTY_DRAFT: Draft = {
   name: "",
+  kind: "adult",
   starter: "",
   main: "",
   dessert: "",
@@ -89,6 +95,7 @@ const EMPTY_DRAFT: Draft = {
   lobster: false,
   notes: "",
 };
+
 
 function PreOrderPage() {
   const [booking, setBooking] = useState<Booking>(EMPTY_BOOKING);
@@ -155,11 +162,12 @@ function PreOrderPage() {
     const payload: Guest = {
       id: editingId ?? crypto.randomUUID(),
       name: draft.name.trim(),
+      kind: draft.kind,
       starter: draft.starter,
       main: draft.main,
       dessert: draft.dessert,
-      cooking: draft.cooking,
-      lobster: draft.lobster,
+      cooking: draft.kind === "child" ? undefined : draft.cooking,
+      lobster: draft.kind === "child" ? false : draft.lobster,
       notes: draft.notes.trim() || undefined,
     };
 
@@ -174,6 +182,7 @@ function PreOrderPage() {
     setEditingId(guest.id);
     setDraft({
       name: guest.name,
+      kind: guest.kind ?? "adult",
       starter: guest.starter,
       main: guest.main,
       dessert: guest.dessert,
@@ -181,6 +190,7 @@ function PreOrderPage() {
       lobster: Boolean(guest.lobster),
       notes: guest.notes ?? "",
     });
+
     document.getElementById("guest-builder")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
@@ -243,8 +253,12 @@ function PreOrderPage() {
         <img src={logo.url} alt="La Casa restaurant" className="mx-auto h-20 w-auto object-contain" />
         <h1 className="script-title mt-4 text-5xl sm:text-6xl">Christmas Day 2026</h1>
         <p className="mt-2 text-xs uppercase tracking-[0.35em] text-muted-foreground">
-          Pre-order · {formatMoney(PRICE_PER_PERSON)} per person
+          {SERVICE_DATE_LABEL}
         </p>
+        <p className="mt-1 text-xs uppercase tracking-[0.35em] text-muted-foreground">
+          {formatMoney(PRICE_PER_PERSON)} pp · {formatMoney(PRICE_PER_CHILD)} bambini
+        </p>
+
         <div className="gold-rule mx-auto mt-5 w-40" />
         <Button
           variant="ghost"
@@ -278,8 +292,11 @@ function PreOrderPage() {
             />
           </Field>
           <Field label="Date">
-            <Input type="date" value={booking.date} onChange={(e) => setField("date")(e.target.value)} />
+            <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm font-medium">
+              {SERVICE_DATE_LABEL}
+            </div>
           </Field>
+
           <Field label="Time">
             <Input type="time" value={booking.time} onChange={(e) => setField("time")(e.target.value)} />
           </Field>
@@ -318,6 +335,34 @@ function PreOrderPage() {
           ) : null}
         </div>
 
+        <div className="mt-4">
+          <Field label="Menu">
+            <div className="inline-flex rounded-lg border p-1">
+              {(["adult", "child"] as GuestKind[]).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  onClick={() =>
+                    setDraft((d) =>
+                      d.kind === k
+                        ? d
+                        : { ...d, kind: k, starter: "", main: "", dessert: "", cooking: undefined, lobster: false },
+                    )
+                  }
+                  aria-pressed={draft.kind === k}
+                  className={`rounded-md px-4 py-1.5 text-sm font-medium transition-colors ${
+                    draft.kind === k ? "bg-accent text-accent-foreground" : "text-muted-foreground"
+                  }`}
+                >
+                  {k === "adult"
+                    ? `Adulto · ${formatMoney(PRICE_PER_PERSON)}`
+                    : `Bambino · ${formatMoney(PRICE_PER_CHILD)}`}
+                </button>
+              ))}
+            </div>
+          </Field>
+        </div>
+
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <Field label="Guest name">
             <Input
@@ -338,13 +383,27 @@ function PreOrderPage() {
         </div>
 
         <div className="mt-6 space-y-6">
-          <div className="rounded-xl border border-accent/50 bg-accent/10 px-4 py-3">
-            <p className="text-xs uppercase tracking-widest text-accent">Included for everyone</p>
-            <p className="mt-1 text-sm font-semibold">{INCLUDED_STARTER.name}</p>
-            <p className="text-xs text-muted-foreground">{INCLUDED_STARTER.description}</p>
-          </div>
-          <DishPicker course="starter" selected={draft.starter} onSelect={pickDish("starter")} />
-          <DishPicker course="main" selected={draft.main} onSelect={pickDish("main")} />
+          {draft.kind === "adult" ? (
+            <div className="rounded-xl border border-accent/50 bg-accent/10 px-4 py-3">
+              <p className="text-xs uppercase tracking-widest text-accent">Included for everyone</p>
+              <p className="mt-1 text-sm font-semibold">{INCLUDED_STARTER.name}</p>
+              <p className="text-xs text-muted-foreground">{INCLUDED_STARTER.description}</p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-accent/50 bg-accent/10 px-4 py-3">
+              <p className="text-xs uppercase tracking-widest text-accent">Children's menu</p>
+              <p className="mt-1 text-sm font-semibold">
+                {formatMoney(PRICE_PER_CHILD)} per child · below 12 years old
+              </p>
+            </div>
+          )}
+          <DishPicker
+            course="starter"
+            kind={draft.kind}
+            selected={draft.starter}
+            onSelect={pickDish("starter")}
+          />
+          <DishPicker course="main" kind={draft.kind} selected={draft.main} onSelect={pickDish("main")} />
 
           {draft.main && (draft.cooking || draft.lobster) ? (
             <button
@@ -356,8 +415,14 @@ function PreOrderPage() {
               {draft.lobster ? ` · + Half Lobster (+£${LOBSTER_SUPPLEMENT})` : ""} — tap to change
             </button>
           ) : null}
-          <DishPicker course="dessert" selected={draft.dessert} onSelect={pickDish("dessert")} />
+          <DishPicker
+            course="dessert"
+            kind={draft.kind}
+            selected={draft.dessert}
+            onSelect={pickDish("dessert")}
+          />
         </div>
+
 
         <div className="mt-6 flex flex-wrap gap-2">
           <Button onClick={saveGuest} disabled={!draftReady} size="lg">
@@ -381,6 +446,11 @@ function PreOrderPage() {
                     <div>
                       <p className="font-display text-base font-semibold">
                         {index + 1}. {guest.name}
+                        {isChild(guest) ? (
+                          <span className="ml-2 rounded-full border border-accent/60 px-2 py-0.5 text-[10px] uppercase tracking-widest text-accent">
+                            Bambino
+                          </span>
+                        ) : null}
                       </p>
                       <dl className="mt-1 space-y-0.5 text-sm text-muted-foreground">
                         <div>Antipasti: {guest.starter}</div>
@@ -421,7 +491,10 @@ function PreOrderPage() {
             </ul>
 
             <div className="mt-5 space-y-1 border-t pt-4 text-sm">
-              <Row label={`Covers`} value={String(guests.length)} />
+              <Row
+                label="Covers"
+                value={`${guests.length} (${guests.filter((g) => !isChild(g)).length} adulti, ${guests.filter(isChild).length} bambini)`}
+              />
               <Row label="Total" value={formatMoney(total)} strong />
               <Row
                 label={`Deposit due (${formatMoney(DEPOSIT_PER_PERSON)} pp)`}
@@ -494,10 +567,14 @@ function PreOrderPage() {
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
             <DialogTitle className="font-display">How to take a pre-order</DialogTitle>
-            <DialogDescription>Christmas Day set menu — {formatMoney(PRICE_PER_PERSON)} per person.</DialogDescription>
+            <DialogDescription>
+              {SERVICE_DATE_LABEL} — {formatMoney(PRICE_PER_PERSON)} per person,{" "}
+              {formatMoney(PRICE_PER_CHILD)} per child.
+            </DialogDescription>
           </DialogHeader>
           <ol className="list-decimal space-y-2 pl-5 text-sm">
-            <li>Fill in the booking details (customer, date, time, contact).</li>
+            <li>Fill in the booking details (customer, time, contact) — the date is always 25 December.</li>
+            <li>Choose Adulto or Bambino, then pick one Antipasto, one Secondo and one Dolce.</li>
             <li>Enter a guest name, then pick one Antipasto, one Secondo and one Dolce.</li>
             <li>
               For Filetto di Manzo choose the cooking temperature; Half Lobster in Garlic Butter can be

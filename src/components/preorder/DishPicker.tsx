@@ -1,25 +1,30 @@
 import { Check, Leaf } from "lucide-react";
-import type { Course, Dish } from "@/lib/menu";
-import { COURSE_LABEL, MENU } from "@/lib/menu";
+import type { Course, Dish, GuestKind } from "@/lib/menu";
+import { COURSE_LABEL, menuFor } from "@/lib/menu";
 import { cn } from "@/lib/utils";
 
 type Props = {
   course: Course;
   selected: string;
+  kind?: GuestKind;
   onSelect: (dish: Dish) => void;
 };
 
-export function DishPicker({ course, selected, onSelect }: Props) {
+export function DishPicker({ course, selected, kind = "adult", onSelect }: Props) {
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-3">
-        <h3 className="font-display text-lg font-semibold tracking-tight">{COURSE_LABEL[course]}</h3>
+        <h3 className="font-display text-lg font-semibold tracking-tight">
+          {COURSE_LABEL[course]}
+          {kind === "child" ? " · Bambini" : ""}
+        </h3>
         <div className="gold-rule flex-1" />
         <span className="text-xs uppercase tracking-widest text-muted-foreground">Choose one</span>
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
-        {MENU[course].map((dish) => {
+        {menuFor(kind)[course].map((dish) => {
+
           const isSelected = selected === dish.name;
           return (
             <button

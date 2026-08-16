@@ -1,8 +1,10 @@
 import {
   DEPOSIT_PER_PERSON,
   INCLUDED_STARTER,
+  SERVICE_DATE_LABEL,
   formatMoney,
   guestPrice,
+  isChild,
   kitchenSummary,
   mainLabel,
   orderTotal,
@@ -11,35 +13,40 @@ import {
 } from "./menu";
 
 function bookingLines(booking: Booking, guests: Guest[]) {
+  const children = guests.filter(isChild).length;
   return [
     `Customer: ${booking.customerName || "-"}`,
-    `Date: ${booking.date || "-"}   Time: ${booking.time || "-"}`,
+    `Date: ${SERVICE_DATE_LABEL}   Time: ${booking.time || "-"}`,
     `Phone: ${booking.phone || "-"}`,
     `Email: ${booking.email || "-"}`,
-    `Covers: ${guests.length}`,
+    `Covers: ${guests.length} (${guests.length - children} adults, ${children} children)`,
     booking.tableNotes ? `Table notes: ${booking.tableNotes}` : null,
   ].filter(Boolean) as string[];
 }
 
 export function orderAsText(booking: Booking, guests: Guest[]) {
   const total = orderTotal(guests);
+  const adults = guests.filter((g) => !isChild(g)).length;
   const lines: string[] = [
     "LA CASA — CHRISTMAS DAY PRE-ORDER 2026",
     "",
     ...bookingLines(booking, guests),
     "",
-    `INCLUDED FOR ALL: ${INCLUDED_STARTER.name} x ${guests.length}`,
+    `INCLUDED FOR ALL ADULTS: ${INCLUDED_STARTER.name} x ${adults}`,
     "",
     "GUESTS",
   ];
 
   guests.forEach((g, i) => {
-    lines.push(`${i + 1}. ${g.name} — ${formatMoney(guestPrice(g))}`);
+    lines.push(
+      `${i + 1}. ${g.name}${isChild(g) ? " (child)" : ""} — ${formatMoney(guestPrice(g))}`,
+    );
     lines.push(`   Antipasti: ${g.starter}`);
     lines.push(`   Secondo: ${mainLabel(g)}`);
     lines.push(`   Dolce: ${g.dessert}`);
     if (g.notes?.trim()) lines.push(`   Notes: ${g.notes.trim()}`);
   });
+
 
   lines.push("", `TOTAL: ${formatMoney(total)}`);
   lines.push(`Deposit due (${formatMoney(DEPOSIT_PER_PERSON)} pp): ${formatMoney(guests.length * DEPOSIT_PER_PERSON)}`);
@@ -84,7 +91,12 @@ export async function downloadOrderPdf(booking: Booking, guests: Guest[]) {
 
   line("Guest Orders", 14, "bold", 22);
   guests.forEach((g, i) => {
-    line(`${i + 1}. ${g.name}  —  ${formatMoney(guestPrice(g))}`, 12, "bold", 16);
+    line(
+      `${i + 1}. ${g.name}${isChild(g) ? "  (child)" : ""}  —  ${formatMoney(guestPrice(g))}`,
+      12,
+      "bold",
+      16,
+    );
     line(`Antipasti: ${g.starter}`);
     line(`Secondo: ${mainLabel(g)}`);
     line(`Dolce: ${g.dessert}`);
@@ -100,7 +112,7 @@ export async function downloadOrderPdf(booking: Booking, guests: Guest[]) {
   doc.addPage();
   y = margin;
   line("Kitchen Production Sheet", 18, "bold", 26);
-  line(`${booking.customerName || "Booking"} — ${booking.date} ${booking.time} — ${guests.length} covers`, 11, "normal", 22);
+  line(`${booking.customerName || "Booking"} — ${SERVICE_DATE_LABEL} ${booking.time} — ${guests.length} covers`, 11, "normal", 22);
   rule();
 
   const summary = kitchenSummary(guests);
@@ -111,12 +123,19 @@ export async function downloadOrderPdf(booking: Booking, guests: Guest[]) {
     y += 8;
   };
 
-  line(`${guests.length} x  ${INCLUDED_STARTER.name} (included for all)`, 11, "bold", 18);
+  line(`${summary.adultCount} x  ${INCLUDED_STARTER.name} (included for all adults)`, 11, "bold", 18);
   y += 8;
   block("Antipasti", summary.starters);
   block("Secondi", summary.mains);
   block("Dolci", summary.desserts);
+  if (summary.childCount) {
+    line(`CHILDREN'S MENU — ${summary.childCount} children`, 12, "bold", 20);
+    block("Kids starters", summary.kidsStarters);
+    block("Kids mains", summary.kidsMains);
+    block("Kids desserts", summary.kidsDesserts);
+  }
   if (summary.lobsters) line(`${summary.lobsters} x  Half Lobster in Garlic Butter (extra)`, 11, "bold", 18);
+
   if (summary.notes.length) {
     y += 8;
     line("ALLERGIES / NOTES", 12, "bold", 18);
