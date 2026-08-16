@@ -162,11 +162,12 @@ function PreOrderPage() {
     const payload: Guest = {
       id: editingId ?? crypto.randomUUID(),
       name: draft.name.trim(),
+      kind: draft.kind,
       starter: draft.starter,
       main: draft.main,
       dessert: draft.dessert,
-      cooking: draft.cooking,
-      lobster: draft.lobster,
+      cooking: draft.kind === "child" ? undefined : draft.cooking,
+      lobster: draft.kind === "child" ? false : draft.lobster,
       notes: draft.notes.trim() || undefined,
     };
 
@@ -181,6 +182,7 @@ function PreOrderPage() {
     setEditingId(guest.id);
     setDraft({
       name: guest.name,
+      kind: guest.kind ?? "adult",
       starter: guest.starter,
       main: guest.main,
       dessert: guest.dessert,
@@ -188,6 +190,7 @@ function PreOrderPage() {
       lobster: Boolean(guest.lobster),
       notes: guest.notes ?? "",
     });
+
     document.getElementById("guest-builder")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
