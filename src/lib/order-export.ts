@@ -111,6 +111,8 @@ export async function downloadOrderPdf(booking: Booking, guests: Guest[]) {
     y += 8;
   };
 
+  line(`${guests.length} x  ${INCLUDED_STARTER.name} (included for all)`, 11, "bold", 18);
+  y += 8;
   block("Antipasti", summary.starters);
   block("Secondi", summary.mains);
   block("Dolci", summary.desserts);
