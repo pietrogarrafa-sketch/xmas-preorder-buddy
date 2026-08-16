@@ -1,4 +1,5 @@
 export const PRICE_PER_PERSON = 110;
+export const PRICE_PER_CHILD = 39.95;
 export const LOBSTER_SUPPLEMENT = 10;
 export const DEPOSIT_PER_PERSON = 20;
 
