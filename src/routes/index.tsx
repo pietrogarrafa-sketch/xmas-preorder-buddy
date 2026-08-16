@@ -76,6 +76,7 @@ const STORAGE_KEY = "lacasa-christmas-preorder-2026";
 
 type Draft = {
   name: string;
+  kind: GuestKind;
   starter: string;
   main: string;
   dessert: string;
@@ -86,6 +87,7 @@ type Draft = {
 
 const EMPTY_DRAFT: Draft = {
   name: "",
+  kind: "adult",
   starter: "",
   main: "",
   dessert: "",
@@ -93,6 +95,7 @@ const EMPTY_DRAFT: Draft = {
   lobster: false,
   notes: "",
 };
+
 
 function PreOrderPage() {
   const [booking, setBooking] = useState<Booking>(EMPTY_BOOKING);
