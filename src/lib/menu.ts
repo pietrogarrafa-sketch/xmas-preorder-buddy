@@ -60,9 +60,9 @@ export type Guest = {
   starter: string;
   main: string;
   dessert: string;
-  cooking?: CookingLevel;
-  lobster?: boolean;
-  notes?: string;
+  cooking?: CookingLevel | undefined;
+  lobster?: boolean | undefined;
+  notes?: string | undefined;
 };
 
 export type Booking = {

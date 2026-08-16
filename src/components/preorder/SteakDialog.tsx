@@ -14,8 +14,8 @@ import { cn } from "@/lib/utils";
 type Props = {
   open: boolean;
   dishName: string;
-  initialCooking?: CookingLevel;
-  initialLobster?: boolean;
+  initialCooking?: CookingLevel | undefined;
+  initialLobster?: boolean | undefined;
   onCancel: () => void;
   onConfirm: (cooking: CookingLevel, lobster: boolean) => void;
 };

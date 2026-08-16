@@ -35,7 +35,6 @@ import {
   DEPOSIT_PER_PERSON,
   EMPTY_BOOKING,
   LOBSTER_SUPPLEMENT,
-  MENU,
   PRICE_PER_PERSON,
   formatMoney,
   guestPrice,
@@ -75,7 +74,7 @@ type Draft = {
   starter: string;
   main: string;
   dessert: string;
-  cooking?: CookingLevel;
+  cooking?: CookingLevel | undefined;
   lobster: boolean;
   notes: string;
 };
@@ -236,8 +235,6 @@ function PreOrderPage() {
       "noopener",
     );
   };
-
-  const steakDishData = MENU.main.find((d) => d.name === steakDish);
 
   return (
     <main className="mx-auto w-full max-w-4xl px-4 pb-28 pt-8 sm:px-6">
@@ -485,7 +482,6 @@ function PreOrderPage() {
           setSteakDish(null);
         }}
       />
-      {steakDishData ? null : null}
 
       <Dialog open={helpOpen} onOpenChange={setHelpOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
