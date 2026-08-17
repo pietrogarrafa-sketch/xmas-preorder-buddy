@@ -238,13 +238,18 @@ function PreOrderPage() {
     toast.success("Order copied to clipboard");
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
     if (!requireGuests()) return;
-    window.open(
-      `https://wa.me/?text=${encodeURIComponent(orderAsText(booking, guests))}`,
-      "_blank",
-      "noopener",
-    );
+    try {
+      const result = await shareOrderPdf(booking, guests, orderAsText(booking, guests));
+      toast.success(
+        result === "shared"
+          ? "PDF ready to send on WhatsApp"
+          : "PDF downloaded — attach it in WhatsApp",
+      );
+    } catch {
+      toast.error("Could not share the PDF. Please try again.");
+    }
   };
 
   return (
