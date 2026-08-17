@@ -50,7 +50,7 @@ import {
   type Guest,
   type GuestKind,
 } from "@/lib/menu";
-import { downloadOrderPdf, orderAsText } from "@/lib/order-export";
+import { downloadOrderPdf, orderAsText, shareOrderPdf } from "@/lib/order-export";
 
 export const Route = createFileRoute("/")({
   head: () => ({
