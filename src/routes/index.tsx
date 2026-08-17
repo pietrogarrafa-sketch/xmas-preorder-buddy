@@ -104,6 +104,8 @@ function PreOrderPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [steakDish, setSteakDish] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [sending, setSending] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   // Restore any work in progress so a refresh never loses an order.
