@@ -53,7 +53,7 @@ export function orderAsText(booking: Booking, guests: Guest[]) {
   return lines.join("\n");
 }
 
-export async function downloadOrderPdf(booking: Booking, guests: Guest[]) {
+async function buildOrderPdf(booking: Booking, guests: Guest[]) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const margin = 48;
@@ -143,5 +143,37 @@ export async function downloadOrderPdf(booking: Booking, guests: Guest[]) {
   }
 
   const safeName = (booking.customerName || "order").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-  doc.save(`lacasa-christmas-preorder-${safeName}.pdf`);
+  return { doc, filename: `lacasa-christmas-preorder-${safeName}.pdf` };
+}
+
+export async function downloadOrderPdf(booking: Booking, guests: Guest[]) {
+  const { doc, filename } = await buildOrderPdf(booking, guests);
+  doc.save(filename);
+}
+
+export async function orderPdfFile(booking: Booking, guests: Guest[]) {
+  const { doc, filename } = await buildOrderPdf(booking, guests);
+  const blob = doc.output("blob") as Blob;
+  return new File([blob], filename, { type: "application/pdf" });
+}
+
+/** Shares the PDF through the native share sheet (WhatsApp included). */
+export async function shareOrderPdf(booking: Booking, guests: Guest[], text: string) {
+  const file = await orderPdfFile(booking, guests);
+  const nav = navigator as Navigator & {
+    canShare?: (data: ShareData) => boolean;
+    share?: (data: ShareData) => Promise<void>;
+  };
+  if (nav.share && nav.canShare?.({ files: [file] })) {
+    await nav.share({ files: [file], text, title: "La Casa — Christmas Pre-Order" });
+    return "shared" as const;
+  }
+  const url = URL.createObjectURL(file);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = file.name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+  return "fallback" as const;
 }
