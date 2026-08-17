@@ -104,6 +104,8 @@ function PreOrderPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [steakDish, setSteakDish] = useState<string | null>(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [sending, setSending] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   // Restore any work in progress so a refresh never loses an order.
@@ -240,6 +242,7 @@ function PreOrderPage() {
 
   const handleWhatsApp = async () => {
     if (!requireGuests()) return;
+    setSending(true);
     try {
       const result = await shareOrderPdf(booking, guests, orderAsText(booking, guests));
       toast.success(
@@ -247,9 +250,17 @@ function PreOrderPage() {
           ? "PDF ready to send on WhatsApp"
           : "PDF downloaded — attach it in WhatsApp",
       );
+      setConfirmOpen(false);
     } catch {
       toast.error("Could not share the PDF. Please try again.");
+    } finally {
+      setSending(false);
     }
+  };
+
+  const openConfirm = () => {
+    if (!requireGuests()) return;
+    setConfirmOpen(true);
   };
 
   return (
@@ -521,7 +532,7 @@ function PreOrderPage() {
             <Button size="lg" onClick={handlePdf}>
               <Download /> Download PDF
             </Button>
-            <Button size="lg" variant="outline" onClick={handleWhatsApp}>
+            <Button size="lg" variant="outline" onClick={openConfirm}>
               Send on WhatsApp
             </Button>
             <Button size="lg" variant="outline" onClick={handleCopy}>
@@ -555,6 +566,77 @@ function PreOrderPage() {
           </div>
         </div>
       ) : null}
+
+      {/* Confirmation before sending the pre-order */}
+      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Conferma il pre-ordine</DialogTitle>
+            <DialogDescription>
+              Controlla il riepilogo prima di inviarlo. Verrà allegato il PDF con ordine e foglio
+              cucina.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 text-sm">
+            <div className="rounded-lg border bg-muted/30 p-3">
+              <p className="font-medium">{booking.customerName || "Cliente senza nome"}</p>
+              <p className="text-muted-foreground">
+                {SERVICE_DATE_LABEL}
+                {booking.time ? ` · ${booking.time}` : ""}
+              </p>
+              {booking.phone ? <p className="text-muted-foreground">{booking.phone}</p> : null}
+              {booking.email ? <p className="text-muted-foreground">{booking.email}</p> : null}
+              {booking.tableNotes ? (
+                <p className="mt-1 text-muted-foreground">Note tavolo: {booking.tableNotes}</p>
+              ) : null}
+            </div>
+
+            <div>
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">
+                {guests.length} coperti · {guests.filter((g) => !isChild(g)).length} adulti ·{" "}
+                {guests.filter(isChild).length} bambini
+              </p>
+              <ul className="mt-2 divide-y">
+                {guests.map((g, i) => (
+                  <li key={g.id} className="py-2">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="font-medium">
+                        {i + 1}. {g.name}
+                        {isChild(g) ? " (bambino)" : ""}
+                      </span>
+                      <span className="tabular-nums">{formatMoney(guestPrice(g))}</span>
+                    </div>
+                    <p className="text-muted-foreground">
+                      {g.starter} · {mainLabel(g)} · {g.dessert}
+                    </p>
+                    {g.notes?.trim() ? (
+                      <p className="text-destructive">Note: {g.notes.trim()}</p>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            <div className="space-y-1 border-t pt-3">
+              <Row label="Totale" value={formatMoney(total)} strong />
+              <Row
+                label={`Acconto (${formatMoney(DEPOSIT_PER_PERSON)} pp)`}
+                value={formatMoney(guests.length * DEPOSIT_PER_PERSON)}
+              />
+            </div>
+          </div>
+
+          <div className="mt-2 flex flex-wrap justify-end gap-2">
+            <Button variant="ghost" onClick={() => setConfirmOpen(false)} disabled={sending}>
+              Torna a modificare
+            </Button>
+            <Button onClick={handleWhatsApp} disabled={sending}>
+              {sending ? "Preparazione…" : "Conferma e invia"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <SteakDialog
         open={Boolean(steakDish)}
