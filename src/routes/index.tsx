@@ -242,6 +242,7 @@ function PreOrderPage() {
 
   const handleWhatsApp = async () => {
     if (!requireGuests()) return;
+    setSending(true);
     try {
       const result = await shareOrderPdf(booking, guests, orderAsText(booking, guests));
       toast.success(
@@ -249,9 +250,17 @@ function PreOrderPage() {
           ? "PDF ready to send on WhatsApp"
           : "PDF downloaded — attach it in WhatsApp",
       );
+      setConfirmOpen(false);
     } catch {
       toast.error("Could not share the PDF. Please try again.");
+    } finally {
+      setSending(false);
     }
+  };
+
+  const openConfirm = () => {
+    if (!requireGuests()) return;
+    setConfirmOpen(true);
   };
 
   return (
