@@ -157,16 +157,32 @@ export async function orderPdfFile(booking: Booking, guests: Guest[]) {
   return new File([blob], filename, { type: "application/pdf" });
 }
 
-/** Shares the PDF through the native share sheet (WhatsApp included). */
-export async function shareOrderPdf(booking: Booking, guests: Guest[], text: string) {
-  const file = await orderPdfFile(booking, guests);
+export function canSharePdf(file: File) {
+  const nav = navigator as Navigator & {
+    canShare?: (data: ShareData) => boolean;
+    share?: (data: ShareData) => Promise<void>;
+  };
+  return Boolean(nav.share && nav.canShare?.({ files: [file] }));
+}
+
+/**
+ * Shares an already-built PDF. Must be called directly from the click handler
+ * (no awaits before it) or the browser drops the user gesture and share() fails.
+ */
+export async function sharePdfFile(file: File, text: string) {
   const nav = navigator as Navigator & {
     canShare?: (data: ShareData) => boolean;
     share?: (data: ShareData) => Promise<void>;
   };
   if (nav.share && nav.canShare?.({ files: [file] })) {
-    await nav.share({ files: [file], text, title: "La Casa — Christmas Pre-Order" });
-    return "shared" as const;
+    // Some WhatsApp targets drop the attachment when text is also present.
+    try {
+      await nav.share({ files: [file], title: "La Casa — Christmas Pre-Order" });
+      return "shared" as const;
+    } catch (err) {
+      if ((err as DOMException)?.name === "AbortError") return "cancelled" as const;
+      throw err;
+    }
   }
   const url = URL.createObjectURL(file);
   const a = document.createElement("a");
