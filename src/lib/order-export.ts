@@ -142,6 +142,101 @@ async function buildOrderPdf(booking: Booking, guests: Guest[]) {
     summary.notes.forEach((n) => line(n));
   }
 
+  // Printable Christmas place cards — four per A4 page.
+  // Each card can be cut out and folded along the centre guide.
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const cardGap = 14;
+  const cardWidth = (width - margin * 2 - cardGap) / 2;
+  const cardHeight = (pageHeight - margin * 2 - cardGap) / 2;
+
+  const drawHolly = (x: number, top: number) => {
+    doc.setFillColor(35, 92, 62);
+    doc.ellipse(x, top, 8, 3, "F");
+    doc.ellipse(x + 10, top + 1, 8, 3, "F");
+    doc.setFillColor(151, 38, 45);
+    doc.circle(x + 5, top + 5, 2.8, "F");
+    doc.circle(x + 10, top + 5, 2.8, "F");
+    doc.circle(x + 7.5, top + 9, 2.8, "F");
+  };
+
+  const cardText = (
+    text: string,
+    x: number,
+    top: number,
+    maxWidth: number,
+    size: number,
+    style: "normal" | "bold" = "normal",
+    colour: [number, number, number] = [39, 55, 45],
+  ) => {
+    doc.setFont("helvetica", style);
+    doc.setFontSize(size);
+    doc.setTextColor(...colour);
+    const chunks = doc.splitTextToSize(text, maxWidth) as string[];
+    chunks.forEach((chunk, index) => doc.text(chunk, x, top + index * (size + 3)));
+    return top + chunks.length * (size + 3);
+  };
+
+  guests.forEach((guest, index) => {
+    if (index % 4 === 0) doc.addPage();
+    const slot = index % 4;
+    const col = slot % 2;
+    const row = Math.floor(slot / 2);
+    const x = margin + col * (cardWidth + cardGap);
+    const top = margin + row * (cardHeight + cardGap);
+    const centre = top + cardHeight / 2;
+
+    doc.setFillColor(252, 249, 240);
+    doc.setDrawColor(177, 139, 58);
+    doc.setLineWidth(1.4);
+    doc.roundedRect(x, top, cardWidth, cardHeight, 7, 7, "FD");
+    doc.setFillColor(31, 83, 57);
+    doc.roundedRect(x, top, cardWidth, 34, 7, 7, "F");
+    doc.rect(x, top + 20, cardWidth, 14, "F");
+    doc.setDrawColor(177, 139, 58);
+    doc.setLineDashPattern([3, 3], 0);
+    doc.line(x + 12, centre, x + cardWidth - 12, centre);
+    doc.setLineDashPattern([], 0);
+    drawHolly(x + cardWidth - 31, top + 14);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.setTextColor(248, 239, 210);
+    doc.text("LA CASA  ·  CHRISTMAS DAY 2026", x + 14, top + 21);
+
+    doc.setFont("times", "bold");
+    doc.setFontSize(21);
+    doc.setTextColor(38, 83, 58);
+    const displayName = guest.name || `Guest ${index + 1}`;
+    const nameLines = doc.splitTextToSize(displayName, cardWidth - 34) as string[];
+    nameLines.slice(0, 2).forEach((name, nameIndex) => {
+      doc.text(name, x + cardWidth / 2, top + 65 + nameIndex * 23, { align: "center" });
+    });
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(151, 38, 45);
+    doc.text(isChild(guest) ? "CHILDREN'S MENU" : "ADULT MENU", x + cardWidth / 2, top + 105, {
+      align: "center",
+    });
+
+    let cardY = centre + 22;
+    const textX = x + 16;
+    const textWidth = cardWidth - 32;
+    if (!isChild(guest)) {
+      cardY = cardText(`Welcome: ${INCLUDED_STARTER.name}`, textX, cardY, textWidth, 8, "bold", [177, 107, 40]);
+    }
+    cardY = cardText(`Antipasto: ${guest.starter}`, textX, cardY + 3, textWidth, 8);
+    cardY = cardText(`Secondo: ${mainLabel(guest)}`, textX, cardY + 3, textWidth, 8);
+    cardY = cardText(`Dolce: ${guest.dessert}`, textX, cardY + 3, textWidth, 8);
+    if (guest.notes?.trim()) {
+      cardText(`NOTE: ${guest.notes.trim()}`, textX, cardY + 4, textWidth, 8, "bold", [151, 38, 45]);
+    }
+
+    doc.setFont("times", "italic");
+    doc.setFontSize(9);
+    doc.setTextColor(177, 139, 58);
+    doc.text("Buon Natale", x + cardWidth - 16, top + cardHeight - 14, { align: "right" });
+  });
+
   const safeName = (booking.customerName || "order").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
   return { doc, filename: `lacasa-christmas-preorder-${safeName}.pdf` };
 }
@@ -168,7 +263,7 @@ export function canSharePdf(file: File) {
  * Shares an already-built PDF. Must be called directly from the click handler
  * (no awaits before it) or the browser drops the user gesture and share() fails.
  */
-export async function sharePdfFile(file: File, text: string) {
+export async function sharePdfFile(file: File) {
   const nav = navigator as Navigator & {
     canShare?: (data: ShareData) => boolean;
     share?: (data: ShareData) => Promise<void>;
@@ -183,12 +278,5 @@ export async function sharePdfFile(file: File, text: string) {
       throw err;
     }
   }
-  const url = URL.createObjectURL(file);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = file.name;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 5000);
-  window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener");
-  return "fallback" as const;
+  return "unsupported" as const;
 }

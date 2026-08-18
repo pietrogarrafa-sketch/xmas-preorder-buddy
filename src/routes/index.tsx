@@ -67,6 +67,8 @@ export const Route = createFileRoute("/")({
         content:
           "Christmas Day set menu pre-order tool: per-guest choices, kitchen production sheet and one-tap PDF.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PreOrderPage,
@@ -107,6 +109,7 @@ function PreOrderPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [sending, setSending] = useState(false);
   const [pdfFile, setPdfFile] = useState<File | null>(null);
+  const [pdfError, setPdfError] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   // Restore any work in progress so a refresh never loses an order.
@@ -245,15 +248,15 @@ function PreOrderPage() {
     if (!requireGuests()) return;
     setSending(true);
     try {
-      // The PDF is pre-built when the dialog opens so share() keeps the user gesture.
-      const file = pdfFile ?? (await orderPdfFile(booking, guests));
-      const result = await sharePdfFile(file, orderAsText(booking, guests));
+      if (!pdfFile) return;
+      // The file is already built, so the native share starts directly from this click.
+      const result = await sharePdfFile(pdfFile);
       if (result === "cancelled") return;
-      toast.success(
-        result === "shared"
-          ? "PDF pronto da inviare su WhatsApp"
-          : "PDF scaricato — allegalo in WhatsApp",
-      );
+      if (result === "unsupported") {
+        toast.error("Questo browser non può allegare file. Scarica il PDF e allegalo da WhatsApp.");
+        return;
+      }
+      toast.success("PDF condiviso — seleziona WhatsApp dalla schermata di condivisione");
       setConfirmOpen(false);
     } catch {
       toast.error("Non è stato possibile condividere il PDF. Riprova.");
@@ -265,10 +268,14 @@ function PreOrderPage() {
   const openConfirm = () => {
     if (!requireGuests()) return;
     setPdfFile(null);
+    setPdfError(false);
     setConfirmOpen(true);
     orderPdfFile(booking, guests)
       .then(setPdfFile)
-      .catch(() => setPdfFile(null));
+      .catch(() => {
+        setPdfFile(null);
+        setPdfError(true);
+      });
   };
 
   return (
@@ -581,8 +588,7 @@ function PreOrderPage() {
           <DialogHeader>
             <DialogTitle>Conferma il pre-ordine</DialogTitle>
             <DialogDescription>
-              Controlla il riepilogo prima di inviarlo. Verrà allegato il PDF con ordine e foglio
-              cucina.
+              Controlla il riepilogo. Il PDF include ordine, foglio cucina e segnaposto natalizi.
             </DialogDescription>
           </DialogHeader>
 
@@ -639,8 +645,14 @@ function PreOrderPage() {
             <Button variant="ghost" onClick={() => setConfirmOpen(false)} disabled={sending}>
               Torna a modificare
             </Button>
-            <Button onClick={handleWhatsApp} disabled={sending}>
-              {sending ? "Preparazione…" : "Conferma e invia"}
+            <Button onClick={handleWhatsApp} disabled={sending || !pdfFile}>
+              {pdfError
+                ? "PDF non disponibile"
+                : !pdfFile
+                  ? "Preparazione PDF…"
+                  : sending
+                    ? "Apertura…"
+                    : "Condividi PDF"}
             </Button>
           </div>
         </DialogContent>
