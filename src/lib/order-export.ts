@@ -160,9 +160,8 @@ export async function orderPdfFile(booking: Booking, guests: Guest[]) {
 export function canSharePdf(file: File) {
   const nav = navigator as Navigator & {
     canShare?: (data: ShareData) => boolean;
-    share?: (data: ShareData) => Promise<void>;
   };
-  return Boolean(nav.share && nav.canShare?.({ files: [file] }));
+  return Boolean(typeof nav.share === "function" && nav.canShare?.({ files: [file] }));
 }
 
 /**
