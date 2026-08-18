@@ -378,10 +378,10 @@ async function buildOrderPdf(booking: Booking, guests: Guest[]) {
     doc.setTextColor(...FOREST);
     const nameLines = doc.splitTextToSize(displayName, cardWidth - 52) as string[];
     nameLines.slice(0, 2).forEach((name, i2) => {
-      doc.text(name, x + cardWidth / 2, top + 96 + i2 * 25, { align: "center" });
+      doc.text(name, x + cardWidth / 2, top + 104 + i2 * 25, { align: "center" });
     });
 
-    const underlineY = top + 96 + Math.min(nameLines.length, 2) * 25 - 8;
+    const underlineY = top + 104 + Math.min(nameLines.length, 2) * 25 - 8;
     doc.setDrawColor(...GOLD);
     doc.setLineWidth(0.6);
     doc.line(x + cardWidth / 2 - 34, underlineY, x + cardWidth / 2 - 10, underlineY);
