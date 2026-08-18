@@ -106,6 +106,7 @@ function PreOrderPage() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [sending, setSending] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   // Restore any work in progress so a refresh never loses an order.
