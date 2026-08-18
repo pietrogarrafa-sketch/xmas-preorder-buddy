@@ -53,110 +53,261 @@ export function orderAsText(booking: Booking, guests: Guest[]) {
   return lines.join("\n");
 }
 
+/* ---------------------------------------------------------------------------
+ * Shared design language with the on-screen / printable page:
+ * parchment paper, forest green, gold rules, serif display type.
+ * ------------------------------------------------------------------------- */
+const PARCHMENT: [number, number, number] = [250, 246, 235];
+const FOREST: [number, number, number] = [26, 71, 50];
+const GOLD: [number, number, number] = [178, 138, 62];
+const GOLD_SOFT: [number, number, number] = [219, 197, 150];
+const CRANBERRY: [number, number, number] = [141, 34, 38];
+const INK: [number, number, number] = [46, 52, 47];
+const MUTED: [number, number, number] = [122, 124, 112];
+
 async function buildOrderPdf(booking: Booking, guests: Guest[]) {
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
-  const margin = 48;
+  const margin = 54;
   const width = doc.internal.pageSize.getWidth();
+  const height = doc.internal.pageSize.getHeight();
   let y = margin;
 
-  const line = (text: string, size = 11, style: "normal" | "bold" = "normal", gap = 16) => {
-    doc.setFont("helvetica", style);
+  /** Snowflake / star mark used as a repeating decorative motif. */
+  const star = (x: number, cy: number, r: number, colour: [number, number, number], w = 0.6) => {
+    doc.setDrawColor(...colour);
+    doc.setLineWidth(w);
+    for (let i = 0; i < 3; i += 1) {
+      const a = (Math.PI / 3) * i;
+      doc.line(x - Math.cos(a) * r, cy - Math.sin(a) * r, x + Math.cos(a) * r, cy + Math.sin(a) * r);
+    }
+  };
+
+  /** Small holly / fir sprig. */
+  const sprig = (x: number, cy: number, scale = 1) => {
+    doc.setFillColor(...FOREST);
+    doc.ellipse(x - 6 * scale, cy, 7 * scale, 2.6 * scale, "F");
+    doc.ellipse(x + 6 * scale, cy - 1 * scale, 7 * scale, 2.6 * scale, "F");
+    doc.setFillColor(...CRANBERRY);
+    doc.circle(x - 2 * scale, cy + 4.5 * scale, 2.4 * scale, "F");
+    doc.circle(x + 2.6 * scale, cy + 4.5 * scale, 2.4 * scale, "F");
+    doc.circle(x + 0.3 * scale, cy + 8.5 * scale, 2.4 * scale, "F");
+  };
+
+  /** Parchment page + double gold frame, matching the card styling on screen. */
+  const dressPage = () => {
+    doc.setFillColor(...PARCHMENT);
+    doc.rect(0, 0, width, height, "F");
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(1.2);
+    doc.rect(28, 28, width - 56, height - 56);
+    doc.setDrawColor(...GOLD_SOFT);
+    doc.setLineWidth(0.5);
+    doc.rect(34, 34, width - 68, height - 68);
+    star(width / 2, 28, 5, GOLD, 0.8);
+    star(width / 2, height - 28, 5, GOLD, 0.8);
+  };
+
+  const newPage = () => {
+    doc.addPage();
+    dressPage();
+    y = margin + 6;
+  };
+
+  dressPage();
+
+  const line = (
+    text: string,
+    size = 10.5,
+    style: "normal" | "bold" | "italic" = "normal",
+    gap = 15,
+    colour: [number, number, number] = INK,
+    font: "helvetica" | "times" = "helvetica",
+  ) => {
+    doc.setFont(font, style);
     doc.setFontSize(size);
+    doc.setTextColor(...colour);
     for (const chunk of doc.splitTextToSize(text, width - margin * 2) as string[]) {
-      if (y > doc.internal.pageSize.getHeight() - margin) {
-        doc.addPage();
-        y = margin;
-      }
+      if (y > height - margin) newPage();
       doc.text(chunk, margin, y);
       y += gap;
     }
   };
 
-  const rule = () => {
-    doc.setDrawColor(180, 150, 80);
+  /** Letter-spaced small-caps section label with a gold hairline. */
+  const sectionLabel = (text: string) => {
+    if (y > height - margin - 30) newPage();
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8.5);
+    doc.setTextColor(...GOLD);
+    doc.text(text.toUpperCase(), margin, y, { charSpace: 2.4 });
+    const w = doc.getTextWidth(text.toUpperCase()) + text.length * 2.4;
+    doc.setDrawColor(...GOLD_SOFT);
+    doc.setLineWidth(0.5);
+    doc.line(margin + w + 10, y - 3, width - margin, y - 3);
+    y += 18;
+  };
+
+  const rule = (soft = false) => {
+    doc.setDrawColor(...(soft ? GOLD_SOFT : GOLD));
+    doc.setLineWidth(soft ? 0.5 : 0.8);
     doc.line(margin, y, width - margin, y);
     y += 18;
   };
 
-  doc.setTextColor(120, 90, 30);
-  line("La Casa", 26, "bold", 28);
-  doc.setTextColor(40, 40, 40);
-  line("Christmas Day Pre-Order 2026", 13, "bold", 22);
-  rule();
+  /** Masthead reproducing the on-screen header. */
+  const masthead = (title: string, subtitle: string) => {
+    doc.setFont("times", "italic");
+    doc.setFontSize(11);
+    doc.setTextColor(...GOLD);
+    doc.text("RISTORANTE", width / 2, y, { align: "center", charSpace: 3 });
+    y += 30;
+    doc.setFont("times", "bold");
+    doc.setFontSize(34);
+    doc.setTextColor(...FOREST);
+    doc.text("La Casa", width / 2, y, { align: "center" });
+    y += 12;
+    sprig(width / 2, y + 2, 0.9);
+    y += 26;
+    doc.setFont("times", "italic");
+    doc.setFontSize(17);
+    doc.setTextColor(...GOLD);
+    doc.text(title, width / 2, y, { align: "center" });
+    y += 18;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(...MUTED);
+    doc.text(subtitle.toUpperCase(), width / 2, y, { align: "center", charSpace: 2.6 });
+    y += 22;
+    rule();
+  };
 
+  masthead("Christmas Day Pre-Order 2026", SERVICE_DATE_LABEL);
+
+  sectionLabel("Booking");
   bookingLines(booking, guests).forEach((l) => line(l));
-  y += 8;
-  rule();
+  y += 6;
 
-  line("Guest Orders", 14, "bold", 22);
+  sectionLabel("Included for every adult");
+  line(
+    `${guests.filter((g) => !isChild(g)).length} x  ${INCLUDED_STARTER.name}`,
+    11,
+    "bold",
+    16,
+    FOREST,
+  );
+  y += 8;
+
+  sectionLabel("Guest orders");
   guests.forEach((g, i) => {
-    line(
-      `${i + 1}. ${g.name}${isChild(g) ? "  (child)" : ""}  —  ${formatMoney(guestPrice(g))}`,
-      12,
-      "bold",
-      16,
-    );
-    line(`Antipasti: ${g.starter}`);
-    line(`Secondo: ${mainLabel(g)}`);
-    line(`Dolce: ${g.dessert}`);
-    if (g.notes?.trim()) line(`Notes: ${g.notes.trim()}`);
-    y += 6;
+    if (y > height - margin - 74) newPage();
+    const blockTop = y - 11;
+    doc.setFont("times", "bold");
+    doc.setFontSize(13);
+    doc.setTextColor(...FOREST);
+    doc.text(`${i + 1}.  ${g.name}${isChild(g) ? "  (child)" : ""}`, margin + 12, y);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10);
+    doc.setTextColor(...GOLD);
+    doc.text(formatMoney(guestPrice(g)), width - margin, y, { align: "right" });
+    y += 15;
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(...INK);
+    [`Antipasti · ${g.starter}`, `Secondo · ${mainLabel(g)}`, `Dolce · ${g.dessert}`].forEach((t) => {
+      for (const chunk of doc.splitTextToSize(t, width - margin * 2 - 24) as string[]) {
+        doc.text(chunk, margin + 12, y);
+        y += 13;
+      }
+    });
+    if (g.notes?.trim()) {
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(...CRANBERRY);
+      for (const chunk of doc.splitTextToSize(
+        `Note · ${g.notes.trim()}`,
+        width - margin * 2 - 24,
+      ) as string[]) {
+        doc.text(chunk, margin + 12, y);
+        y += 13;
+      }
+    }
+    doc.setDrawColor(...GOLD_SOFT);
+    doc.setLineWidth(1.4);
+    doc.line(margin, blockTop, margin, y - 10);
+    y += 12;
   });
 
+  if (y > height - margin - 70) newPage();
   rule();
-  line(`Total: ${formatMoney(orderTotal(guests))}`, 13, "bold", 18);
-  line(`Deposit due (${formatMoney(DEPOSIT_PER_PERSON)} per person): ${formatMoney(guests.length * DEPOSIT_PER_PERSON)}`);
+  doc.setFont("times", "bold");
+  doc.setFontSize(16);
+  doc.setTextColor(...FOREST);
+  doc.text("Total", margin, y + 4);
+  doc.setTextColor(...GOLD);
+  doc.text(formatMoney(orderTotal(guests)), width - margin, y + 4, { align: "right" });
+  y += 24;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(...MUTED);
+  doc.text(
+    `Deposit due (${formatMoney(DEPOSIT_PER_PERSON)} per person): ${formatMoney(guests.length * DEPOSIT_PER_PERSON)}`,
+    margin,
+    y,
+  );
 
-  // Kitchen page
-  doc.addPage();
-  y = margin;
-  line("Kitchen Production Sheet", 18, "bold", 26);
-  line(`${booking.customerName || "Booking"} — ${SERVICE_DATE_LABEL} ${booking.time} — ${guests.length} covers`, 11, "normal", 22);
-  rule();
+  // ---------------------------------------------------------------- Kitchen
+  newPage();
+  masthead("Kitchen Production Sheet", `${SERVICE_DATE_LABEL} · ${guests.length} covers`);
+  line(`${booking.customerName || "Booking"} — ${booking.time || "-"}`, 10.5, "italic", 20, MUTED, "times");
 
   const summary = kitchenSummary(guests);
   const block = (title: string, rows: [string, number][]) => {
-    line(title.toUpperCase(), 12, "bold", 18);
-    if (!rows.length) line("—");
-    rows.forEach(([name, count]) => line(`${count} x  ${name}`));
-    y += 8;
+    sectionLabel(title);
+    if (!rows.length) line("—", 10.5, "normal", 15, MUTED);
+    rows.forEach(([name, count]) => {
+      if (y > height - margin) newPage();
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(...FOREST);
+      doc.text(`${count}`.padStart(2, " "), margin + 6, y);
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(...INK);
+      doc.text(name, margin + 30, y);
+      y += 15;
+    });
+    y += 6;
   };
 
-  line(`${summary.adultCount} x  ${INCLUDED_STARTER.name} (included for all adults)`, 11, "bold", 18);
-  y += 8;
+  block("Included", [[INCLUDED_STARTER.name, summary.adultCount]]);
   block("Antipasti", summary.starters);
   block("Secondi", summary.mains);
   block("Dolci", summary.desserts);
   if (summary.childCount) {
-    line(`CHILDREN'S MENU — ${summary.childCount} children`, 12, "bold", 20);
-    block("Kids starters", summary.kidsStarters);
+    block(`Kids starters (${summary.childCount} children)`, summary.kidsStarters);
     block("Kids mains", summary.kidsMains);
     block("Kids desserts", summary.kidsDesserts);
   }
-  if (summary.lobsters) line(`${summary.lobsters} x  Half Lobster in Garlic Butter (extra)`, 11, "bold", 18);
-
+  if (summary.lobsters) block("Supplements", [["Half Lobster in Garlic Butter", summary.lobsters]]);
   if (summary.notes.length) {
-    y += 8;
-    line("ALLERGIES / NOTES", 12, "bold", 18);
-    summary.notes.forEach((n) => line(n));
+    sectionLabel("Allergies / notes");
+    summary.notes.forEach((n) => line(n, 10, "bold", 14, CRANBERRY));
   }
 
-  // Printable Christmas place cards — four per A4 page.
-  // Each card can be cut out and folded along the centre guide.
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const cardGap = 14;
+  // ------------------------------------------------------- Christmas cards
+  const cardGap = 16;
   const cardWidth = (width - margin * 2 - cardGap) / 2;
-  const cardHeight = (pageHeight - margin * 2 - cardGap) / 2;
+  const cardHeight = (height - margin * 2 - cardGap) / 2;
 
-  const drawHolly = (x: number, top: number) => {
-    doc.setFillColor(35, 92, 62);
-    doc.ellipse(x, top, 8, 3, "F");
-    doc.ellipse(x + 10, top + 1, 8, 3, "F");
-    doc.setFillColor(151, 38, 45);
-    doc.circle(x + 5, top + 5, 2.8, "F");
-    doc.circle(x + 10, top + 5, 2.8, "F");
-    doc.circle(x + 7.5, top + 9, 2.8, "F");
+  const fir = (cx: number, baseY: number, h: number) => {
+    doc.setFillColor(...FOREST);
+    const w = h * 0.55;
+    for (let i = 0; i < 3; i += 1) {
+      const tierTop = baseY - h + (h / 3) * i;
+      const tierW = (w * (i + 1.4)) / 3;
+      doc.triangle(cx, tierTop, cx - tierW, tierTop + h / 2.4, cx + tierW, tierTop + h / 2.4, "F");
+    }
+    doc.setFillColor(...GOLD);
+    doc.circle(cx, baseY - h - 2, 1.8, "F");
   };
 
   const cardText = (
@@ -165,76 +316,117 @@ async function buildOrderPdf(booking: Booking, guests: Guest[]) {
     top: number,
     maxWidth: number,
     size: number,
-    style: "normal" | "bold" = "normal",
-    colour: [number, number, number] = [39, 55, 45],
+    style: "normal" | "bold" | "italic" = "normal",
+    colour: [number, number, number] = INK,
+    font: "helvetica" | "times" = "helvetica",
   ) => {
-    doc.setFont("helvetica", style);
+    doc.setFont(font, style);
     doc.setFontSize(size);
     doc.setTextColor(...colour);
     const chunks = doc.splitTextToSize(text, maxWidth) as string[];
-    chunks.forEach((chunk, index) => doc.text(chunk, x, top + index * (size + 3)));
-    return top + chunks.length * (size + 3);
+    chunks.forEach((chunk, index) => doc.text(chunk, x, top + index * (size + 3.4)));
+    return top + chunks.length * (size + 3.4);
   };
 
   guests.forEach((guest, index) => {
-    if (index % 4 === 0) doc.addPage();
+    if (index % 4 === 0) {
+      doc.addPage();
+      doc.setFillColor(...PARCHMENT);
+      doc.rect(0, 0, width, height, "F");
+    }
     const slot = index % 4;
-    const col = slot % 2;
-    const row = Math.floor(slot / 2);
-    const x = margin + col * (cardWidth + cardGap);
-    const top = margin + row * (cardHeight + cardGap);
+    const x = margin + (slot % 2) * (cardWidth + cardGap);
+    const top = margin + Math.floor(slot / 2) * (cardHeight + cardGap);
     const centre = top + cardHeight / 2;
 
-    doc.setFillColor(252, 249, 240);
-    doc.setDrawColor(177, 139, 58);
-    doc.setLineWidth(1.4);
-    doc.roundedRect(x, top, cardWidth, cardHeight, 7, 7, "FD");
-    doc.setFillColor(31, 83, 57);
-    doc.roundedRect(x, top, cardWidth, 34, 7, 7, "F");
-    doc.rect(x, top + 20, cardWidth, 14, "F");
-    doc.setDrawColor(177, 139, 58);
-    doc.setLineDashPattern([3, 3], 0);
-    doc.line(x + 12, centre, x + cardWidth - 12, centre);
-    doc.setLineDashPattern([], 0);
-    drawHolly(x + cardWidth - 31, top + 14);
+    // Card body: cream panel, double gold frame, forest crown band.
+    doc.setFillColor(253, 251, 244);
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(1.1);
+    doc.roundedRect(x, top, cardWidth, cardHeight, 8, 8, "FD");
+    doc.setDrawColor(...GOLD_SOFT);
+    doc.setLineWidth(0.4);
+    doc.roundedRect(x + 6, top + 6, cardWidth - 12, cardHeight - 12, 6, 6, "S");
 
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.setTextColor(248, 239, 210);
-    doc.text("LA CASA  ·  CHRISTMAS DAY 2026", x + 14, top + 21);
-
-    doc.setFont("times", "bold");
-    doc.setFontSize(21);
-    doc.setTextColor(38, 83, 58);
-    const displayName = guest.name || `Guest ${index + 1}`;
-    const nameLines = doc.splitTextToSize(displayName, cardWidth - 34) as string[];
-    nameLines.slice(0, 2).forEach((name, nameIndex) => {
-      doc.text(name, x + cardWidth / 2, top + 65 + nameIndex * 23, { align: "center" });
-    });
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(151, 38, 45);
-    doc.text(isChild(guest) ? "CHILDREN'S MENU" : "ADULT MENU", x + cardWidth / 2, top + 105, {
-      align: "center",
-    });
-
-    let cardY = centre + 22;
-    const textX = x + 16;
-    const textWidth = cardWidth - 32;
-    if (!isChild(guest)) {
-      cardY = cardText(`Welcome: ${INCLUDED_STARTER.name}`, textX, cardY, textWidth, 8, "bold", [177, 107, 40]);
-    }
-    cardY = cardText(`Antipasto: ${guest.starter}`, textX, cardY + 3, textWidth, 8);
-    cardY = cardText(`Secondo: ${mainLabel(guest)}`, textX, cardY + 3, textWidth, 8);
-    cardY = cardText(`Dolce: ${guest.dessert}`, textX, cardY + 3, textWidth, 8);
-    if (guest.notes?.trim()) {
-      cardText(`NOTE: ${guest.notes.trim()}`, textX, cardY + 4, textWidth, 8, "bold", [151, 38, 45]);
-    }
+    doc.setFillColor(...FOREST);
+    doc.roundedRect(x, top, cardWidth, 30, 8, 8, "F");
+    doc.rect(x, top + 18, cardWidth, 12, "F");
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.8);
+    doc.line(x, top + 30, x + cardWidth, top + 30);
 
     doc.setFont("times", "italic");
-    doc.setFontSize(9);
-    doc.setTextColor(177, 139, 58);
-    doc.text("Buon Natale", x + cardWidth - 16, top + cardHeight - 14, { align: "right" });
+    doc.setFontSize(10);
+    doc.setTextColor(240, 231, 205);
+    doc.text("La Casa  ·  Christmas Day 2026", x + cardWidth / 2, top + 20, { align: "center" });
+
+    // Snowfall motif inside the upper half.
+    for (let i = 0; i < 7; i += 1) {
+      star(
+        x + 20 + ((i * 37) % (cardWidth - 40)),
+        top + 44 + ((i * 23) % 26),
+        i % 2 ? 2.6 : 3.6,
+        GOLD_SOFT,
+        0.45,
+      );
+    }
+
+    // Guest name — the hero of the card.
+    const displayName = guest.name || `Guest ${index + 1}`;
+    doc.setFont("times", "bolditalic");
+    doc.setFontSize(displayName.length > 18 ? 20 : 25);
+    doc.setTextColor(...FOREST);
+    const nameLines = doc.splitTextToSize(displayName, cardWidth - 52) as string[];
+    nameLines.slice(0, 2).forEach((name, i2) => {
+      doc.text(name, x + cardWidth / 2, top + 104 + i2 * 25, { align: "center" });
+    });
+
+    const underlineY = top + 104 + Math.min(nameLines.length, 2) * 25 - 8;
+    doc.setDrawColor(...GOLD);
+    doc.setLineWidth(0.6);
+    doc.line(x + cardWidth / 2 - 34, underlineY, x + cardWidth / 2 - 10, underlineY);
+    doc.line(x + cardWidth / 2 + 10, underlineY, x + cardWidth / 2 + 34, underlineY);
+    star(x + cardWidth / 2, underlineY, 4, GOLD, 0.7);
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7);
+    doc.setTextColor(...CRANBERRY);
+    doc.text(isChild(guest) ? "CHILDREN'S MENU" : "ADULT MENU", x + cardWidth / 2, underlineY + 18, {
+      align: "center",
+      charSpace: 2,
+    });
+
+    // Fold guide.
+    doc.setDrawColor(...GOLD_SOFT);
+    doc.setLineWidth(0.5);
+    doc.setLineDashPattern([3, 4], 0);
+    doc.line(x + 14, centre, x + cardWidth - 14, centre);
+    doc.setLineDashPattern([], 0);
+
+    // Lower half: the menu chosen for this guest.
+    let cardY = centre + 26;
+    const textX = x + 24;
+    const textWidth = cardWidth - 48;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(6.5);
+    doc.setTextColor(...GOLD);
+    doc.text("IL SUO MENÙ", textX, cardY - 12, { charSpace: 2 });
+
+    if (!isChild(guest)) {
+      cardY = cardText(`Benvenuto · ${INCLUDED_STARTER.name}`, textX, cardY, textWidth, 8.5, "italic", MUTED);
+    }
+    cardY = cardText(`Antipasto · ${guest.starter}`, textX, cardY + 4, textWidth, 8.5);
+    cardY = cardText(`Secondo · ${mainLabel(guest)}`, textX, cardY + 4, textWidth, 8.5);
+    cardY = cardText(`Dolce · ${guest.dessert}`, textX, cardY + 4, textWidth, 8.5);
+    if (guest.notes?.trim()) {
+      cardY = cardText(`Nota · ${guest.notes.trim()}`, textX, cardY + 5, textWidth, 8, "bold", CRANBERRY);
+    }
+
+    fir(x + 26, top + cardHeight - 22, 22);
+    doc.setFont("times", "italic");
+    doc.setFontSize(11);
+    doc.setTextColor(...GOLD);
+    doc.text("Buon Natale", x + cardWidth - 22, top + cardHeight - 20, { align: "right" });
   });
 
   const safeName = (booking.customerName || "order").replace(/[^a-z0-9]+/gi, "-").toLowerCase();
