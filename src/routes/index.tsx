@@ -244,15 +244,18 @@ function PreOrderPage() {
     if (!requireGuests()) return;
     setSending(true);
     try {
-      const result = await shareOrderPdf(booking, guests, orderAsText(booking, guests));
+      // The PDF is pre-built when the dialog opens so share() keeps the user gesture.
+      const file = pdfFile ?? (await orderPdfFile(booking, guests));
+      const result = await sharePdfFile(file, orderAsText(booking, guests));
+      if (result === "cancelled") return;
       toast.success(
         result === "shared"
-          ? "PDF ready to send on WhatsApp"
-          : "PDF downloaded — attach it in WhatsApp",
+          ? "PDF pronto da inviare su WhatsApp"
+          : "PDF scaricato — allegalo in WhatsApp",
       );
       setConfirmOpen(false);
     } catch {
-      toast.error("Could not share the PDF. Please try again.");
+      toast.error("Non è stato possibile condividere il PDF. Riprova.");
     } finally {
       setSending(false);
     }
@@ -260,7 +263,11 @@ function PreOrderPage() {
 
   const openConfirm = () => {
     if (!requireGuests()) return;
+    setPdfFile(null);
     setConfirmOpen(true);
+    orderPdfFile(booking, guests)
+      .then(setPdfFile)
+      .catch(() => setPdfFile(null));
   };
 
   return (
