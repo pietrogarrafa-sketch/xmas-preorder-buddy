@@ -50,7 +50,7 @@ import {
   type Guest,
   type GuestKind,
 } from "@/lib/menu";
-import { downloadOrderPdf, orderAsText, shareOrderPdf } from "@/lib/order-export";
+import { downloadOrderPdf, orderAsText, orderPdfFile, sharePdfFile } from "@/lib/order-export";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -106,6 +106,7 @@ function PreOrderPage() {
   const [helpOpen, setHelpOpen] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [sending, setSending] = useState(false);
+  const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [loaded, setLoaded] = useState(false);
 
   // Restore any work in progress so a refresh never loses an order.
@@ -244,15 +245,18 @@ function PreOrderPage() {
     if (!requireGuests()) return;
     setSending(true);
     try {
-      const result = await shareOrderPdf(booking, guests, orderAsText(booking, guests));
+      // The PDF is pre-built when the dialog opens so share() keeps the user gesture.
+      const file = pdfFile ?? (await orderPdfFile(booking, guests));
+      const result = await sharePdfFile(file, orderAsText(booking, guests));
+      if (result === "cancelled") return;
       toast.success(
         result === "shared"
-          ? "PDF ready to send on WhatsApp"
-          : "PDF downloaded — attach it in WhatsApp",
+          ? "PDF pronto da inviare su WhatsApp"
+          : "PDF scaricato — allegalo in WhatsApp",
       );
       setConfirmOpen(false);
     } catch {
-      toast.error("Could not share the PDF. Please try again.");
+      toast.error("Non è stato possibile condividere il PDF. Riprova.");
     } finally {
       setSending(false);
     }
@@ -260,7 +264,11 @@ function PreOrderPage() {
 
   const openConfirm = () => {
     if (!requireGuests()) return;
+    setPdfFile(null);
     setConfirmOpen(true);
+    orderPdfFile(booking, guests)
+      .then(setPdfFile)
+      .catch(() => setPdfFile(null));
   };
 
   return (
