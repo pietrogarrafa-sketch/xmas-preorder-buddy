@@ -623,16 +623,25 @@ async function buildOrderPdf(
   return { doc, filename: `lacasa-christmas-preorder-${safeName}.pdf` };
 }
 
-export async function downloadOrderPdf(booking: Booking, guests: Guest[]) {
-  const { doc, filename } = await buildOrderPdf(booking, guests);
+export async function downloadOrderPdf(
+  booking: Booking,
+  guests: Guest[],
+  theme: PlaceCardTheme = "classic",
+) {
+  const { doc, filename } = await buildOrderPdf(booking, guests, theme);
   doc.save(filename);
 }
 
-export async function orderPdfFile(booking: Booking, guests: Guest[]) {
-  const { doc, filename } = await buildOrderPdf(booking, guests);
+export async function orderPdfFile(
+  booking: Booking,
+  guests: Guest[],
+  theme: PlaceCardTheme = "classic",
+) {
+  const { doc, filename } = await buildOrderPdf(booking, guests, theme);
   const blob = doc.output("blob") as Blob;
   return new File([blob], filename, { type: "application/pdf" });
 }
+
 
 export function canSharePdf(file: File) {
   const nav = navigator as Navigator & {
