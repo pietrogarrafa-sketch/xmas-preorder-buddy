@@ -121,9 +121,9 @@ export const KIDS_MENU: Record<Course, Dish[]> = {
 };
 
 export const COURSE_LABEL: Record<Course, string> = {
-  starter: "Antipasti",
-  main: "Secondi",
-  dessert: "Dolci",
+  starter: "Starters",
+  main: "Mains",
+  dessert: "Desserts",
 };
 
 export type GuestKind = "adult" | "child";

@@ -50,7 +50,14 @@ import {
   type Guest,
   type GuestKind,
 } from "@/lib/menu";
-import { downloadOrderPdf, orderAsText, orderPdfFile, sharePdfFile } from "@/lib/order-export";
+import {
+  PLACE_CARD_THEMES,
+  downloadOrderPdf,
+  orderAsText,
+  orderPdfFile,
+  sharePdfFile,
+  type PlaceCardTheme,
+} from "@/lib/order-export";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -111,6 +118,7 @@ function PreOrderPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfError, setPdfError] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [cardTheme, setCardTheme] = useState<PlaceCardTheme>("classic");
 
   // Restore any work in progress so a refresh never loses an order.
   useEffect(() => {
@@ -231,7 +239,7 @@ function PreOrderPage() {
   const handlePdf = async () => {
     if (!requireGuests()) return;
     try {
-      await downloadOrderPdf(booking, guests);
+      await downloadOrderPdf(booking, guests, cardTheme);
       toast.success("PDF downloaded");
     } catch {
       toast.error("Could not generate the PDF. Please try again.");
@@ -253,13 +261,13 @@ function PreOrderPage() {
       const result = await sharePdfFile(pdfFile);
       if (result === "cancelled") return;
       if (result === "unsupported") {
-        toast.error("Questo browser non può allegare file. Scarica il PDF e allegalo da WhatsApp.");
+        toast.error("This browser cannot attach files. Download the PDF and attach it in WhatsApp.");
         return;
       }
-      toast.success("PDF condiviso — seleziona WhatsApp dalla schermata di condivisione");
+      toast.success("PDF shared — pick WhatsApp in the share sheet");
       setConfirmOpen(false);
     } catch {
-      toast.error("Non è stato possibile condividere il PDF. Riprova.");
+      toast.error("Could not share the PDF. Please try again.");
     } finally {
       setSending(false);
     }
@@ -270,7 +278,7 @@ function PreOrderPage() {
     setPdfFile(null);
     setPdfError(false);
     setConfirmOpen(true);
-    orderPdfFile(booking, guests)
+    orderPdfFile(booking, guests, cardTheme)
       .then(setPdfFile)
       .catch(() => {
         setPdfFile(null);
@@ -386,8 +394,8 @@ function PreOrderPage() {
                   }`}
                 >
                   {k === "adult"
-                    ? `Adulto · ${formatMoney(PRICE_PER_PERSON)}`
-                    : `Bambino · ${formatMoney(PRICE_PER_CHILD)}`}
+                    ? `Adult · ${formatMoney(PRICE_PER_PERSON)}`
+                    : `Child · ${formatMoney(PRICE_PER_CHILD)}`}
                 </button>
               ))}
             </div>
@@ -479,14 +487,14 @@ function PreOrderPage() {
                         {index + 1}. {guest.name}
                         {isChild(guest) ? (
                           <span className="ml-2 rounded-full border border-accent/60 px-2 py-0.5 text-[10px] uppercase tracking-widest text-accent">
-                            Bambino
+                            Child
                           </span>
                         ) : null}
                       </p>
                       <dl className="mt-1 space-y-0.5 text-sm text-muted-foreground">
-                        <div>Antipasti: {guest.starter}</div>
-                        <div>Secondo: {mainLabel(guest)}</div>
-                        <div>Dolce: {guest.dessert}</div>
+                        <div>Starter: {guest.starter}</div>
+                        <div>Main: {mainLabel(guest)}</div>
+                        <div>Dessert: {guest.dessert}</div>
                         {guest.notes ? (
                           <div className="text-destructive">Notes: {guest.notes}</div>
                         ) : null}
@@ -524,7 +532,7 @@ function PreOrderPage() {
             <div className="mt-5 space-y-1 border-t pt-4 text-sm">
               <Row
                 label="Covers"
-                value={`${guests.length} (${guests.filter((g) => !isChild(g)).length} adulti, ${guests.filter(isChild).length} bambini)`}
+                value={`${guests.length} (${guests.filter((g) => !isChild(g)).length} adults, ${guests.filter(isChild).length} children)`}
               />
               <Row label="Total" value={formatMoney(total)} strong />
               <Row
@@ -540,6 +548,29 @@ function PreOrderPage() {
             </h2>
             <div className="mt-4">
               <KitchenSummary guests={guests} />
+            </div>
+          </section>
+
+          <section className="no-print mt-6 rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)] sm:p-6">
+            <h2 className="text-lg font-semibold">Place card design</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Choose the Christmas look used for the guest place cards in the PDF.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {PLACE_CARD_THEMES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setCardTheme(t.id)}
+                  aria-pressed={cardTheme === t.id}
+                  className={`rounded-xl border p-3 text-left transition-colors ${
+                    cardTheme === t.id ? "border-accent bg-accent/10" : "hover:bg-muted/40"
+                  }`}
+                >
+                  <span className="block font-display text-base font-semibold">{t.name}</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">{t.description}</span>
+                </button>
+              ))}
             </div>
           </section>
 
@@ -586,15 +617,15 @@ function PreOrderPage() {
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Conferma il pre-ordine</DialogTitle>
+            <DialogTitle>Confirm the pre-order</DialogTitle>
             <DialogDescription>
-              Controlla il riepilogo. Il PDF include ordine, foglio cucina e segnaposto natalizi.
+              Check the summary. The PDF includes the order, the kitchen sheet and the Christmas place cards.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 text-sm">
             <div className="rounded-lg border bg-muted/30 p-3">
-              <p className="font-medium">{booking.customerName || "Cliente senza nome"}</p>
+              <p className="font-medium">{booking.customerName || "Unnamed customer"}</p>
               <p className="text-muted-foreground">
                 {SERVICE_DATE_LABEL}
                 {booking.time ? ` · ${booking.time}` : ""}
@@ -602,14 +633,14 @@ function PreOrderPage() {
               {booking.phone ? <p className="text-muted-foreground">{booking.phone}</p> : null}
               {booking.email ? <p className="text-muted-foreground">{booking.email}</p> : null}
               {booking.tableNotes ? (
-                <p className="mt-1 text-muted-foreground">Note tavolo: {booking.tableNotes}</p>
+                <p className="mt-1 text-muted-foreground">Table notes: {booking.tableNotes}</p>
               ) : null}
             </div>
 
             <div>
               <p className="text-xs uppercase tracking-widest text-muted-foreground">
-                {guests.length} coperti · {guests.filter((g) => !isChild(g)).length} adulti ·{" "}
-                {guests.filter(isChild).length} bambini
+                {guests.length} covers · {guests.filter((g) => !isChild(g)).length} adults ·{" "}
+                {guests.filter(isChild).length} children
               </p>
               <ul className="mt-2 divide-y">
                 {guests.map((g, i) => (
@@ -617,7 +648,7 @@ function PreOrderPage() {
                     <div className="flex items-baseline justify-between gap-3">
                       <span className="font-medium">
                         {i + 1}. {g.name}
-                        {isChild(g) ? " (bambino)" : ""}
+                        {isChild(g) ? " (child)" : ""}
                       </span>
                       <span className="tabular-nums">{formatMoney(guestPrice(g))}</span>
                     </div>
@@ -625,7 +656,7 @@ function PreOrderPage() {
                       {g.starter} · {mainLabel(g)} · {g.dessert}
                     </p>
                     {g.notes?.trim() ? (
-                      <p className="text-destructive">Note: {g.notes.trim()}</p>
+                      <p className="text-destructive">Notes: {g.notes.trim()}</p>
                     ) : null}
                   </li>
                 ))}
@@ -633,9 +664,9 @@ function PreOrderPage() {
             </div>
 
             <div className="space-y-1 border-t pt-3">
-              <Row label="Totale" value={formatMoney(total)} strong />
+              <Row label="Total" value={formatMoney(total)} strong />
               <Row
-                label={`Acconto (${formatMoney(DEPOSIT_PER_PERSON)} pp)`}
+                label={`Deposit (${formatMoney(DEPOSIT_PER_PERSON)} pp)`}
                 value={formatMoney(guests.length * DEPOSIT_PER_PERSON)}
               />
             </div>
@@ -643,16 +674,16 @@ function PreOrderPage() {
 
           <div className="mt-2 flex flex-wrap justify-end gap-2">
             <Button variant="ghost" onClick={() => setConfirmOpen(false)} disabled={sending}>
-              Torna a modificare
+              Back to editing
             </Button>
             <Button onClick={handleWhatsApp} disabled={sending || !pdfFile}>
               {pdfError
-                ? "PDF non disponibile"
+                ? "PDF unavailable"
                 : !pdfFile
-                  ? "Preparazione PDF…"
+                  ? "Preparing PDF…"
                   : sending
-                    ? "Apertura…"
-                    : "Condividi PDF"}
+                    ? "Opening…"
+                    : "Share PDF"}
             </Button>
           </div>
         </DialogContent>
@@ -681,8 +712,8 @@ function PreOrderPage() {
           </DialogHeader>
           <ol className="list-decimal space-y-2 pl-5 text-sm">
             <li>Fill in the booking details (customer, time, contact) — the date is always 25 December.</li>
-            <li>Choose Adulto or Bambino, then pick one Antipasto, one Secondo and one Dolce.</li>
-            <li>Enter a guest name, then pick one Antipasto, one Secondo and one Dolce.</li>
+            <li>Choose Adult or Child, then pick one starter, one main and one dessert.</li>
+            <li>Enter a guest name, then add allergies or special requests if needed.</li>
             <li>
               For Filetto di Manzo choose the cooking temperature; Half Lobster in Garlic Butter can be
               added for +£{LOBSTER_SUPPLEMENT}.
