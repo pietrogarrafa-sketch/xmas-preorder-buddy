@@ -65,7 +65,61 @@ const CRANBERRY: [number, number, number] = [141, 34, 38];
 const INK: [number, number, number] = [46, 52, 47];
 const MUTED: [number, number, number] = [122, 124, 112];
 
-async function buildOrderPdf(booking: Booking, guests: Guest[]) {
+/** Selectable Christmas looks for the printed place cards. */
+export const PLACE_CARD_THEMES = [
+  {
+    id: "classic",
+    name: "Classic parchment",
+    description: "Green crown band, gold frame and snowfall — matches the order pages.",
+  },
+  {
+    id: "midnight",
+    name: "Midnight forest",
+    description: "Deep green card with gold stars and the La Casa logo in gold.",
+  },
+  {
+    id: "minimal",
+    name: "Ivory & logo",
+    description: "Quiet ivory card with the restaurant logo crest and a fine gold rule.",
+  },
+] as const;
+
+export type PlaceCardTheme = (typeof PLACE_CARD_THEMES)[number]["id"];
+
+let logoCache: { dataUrl: string; width: number; height: number } | null | undefined;
+
+/** Loads the restaurant logo as a data URL so jsPDF can embed it. */
+async function loadLogo() {
+  if (logoCache !== undefined) return logoCache;
+  try {
+    const logo = (await import("@/assets/lacasa-logo.png.asset.json")).default as { url: string };
+    const res = await fetch(logo.url);
+    const blob = await res.blob();
+    const dataUrl = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+    const size = await new Promise<{ width: number; height: number }>((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = reject;
+      img.src = dataUrl;
+    });
+    logoCache = { dataUrl, ...size };
+  } catch {
+    logoCache = null;
+  }
+  return logoCache;
+}
+
+async function buildOrderPdf(
+  booking: Booking,
+  guests: Guest[],
+  theme: PlaceCardTheme = "classic",
+) {
+
   const { jsPDF } = await import("jspdf");
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const margin = 54;
