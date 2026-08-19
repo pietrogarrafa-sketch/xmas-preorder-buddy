@@ -41,9 +41,9 @@ export function orderAsText(booking: Booking, guests: Guest[]) {
     lines.push(
       `${i + 1}. ${g.name}${isChild(g) ? " (child)" : ""} — ${formatMoney(guestPrice(g))}`,
     );
-    lines.push(`   Antipasti: ${g.starter}`);
-    lines.push(`   Secondo: ${mainLabel(g)}`);
-    lines.push(`   Dolce: ${g.dessert}`);
+    lines.push(`   Starter: ${g.starter}`);
+    lines.push(`   Main: ${mainLabel(g)}`);
+    lines.push(`   Dessert: ${g.dessert}`);
     if (g.notes?.trim()) lines.push(`   Notes: ${g.notes.trim()}`);
   });
 
@@ -268,7 +268,7 @@ async function buildOrderPdf(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
     doc.setTextColor(...INK);
-    [`Antipasti · ${g.starter}`, `Secondo · ${mainLabel(g)}`, `Dolce · ${g.dessert}`].forEach((t) => {
+    [`Starter · ${g.starter}`, `Main · ${mainLabel(g)}`, `Dessert · ${g.dessert}`].forEach((t) => {
       for (const chunk of doc.splitTextToSize(t, width - margin * 2 - 24) as string[]) {
         doc.text(chunk, margin + 12, y);
         y += 13;
@@ -333,9 +333,9 @@ async function buildOrderPdf(
   };
 
   block("Included", [[INCLUDED_STARTER.name, summary.adultCount]]);
-  block("Antipasti", summary.starters);
-  block("Secondi", summary.mains);
-  block("Dolci", summary.desserts);
+  block("Starters", summary.starters);
+  block("Mains", summary.mains);
+  block("Desserts", summary.desserts);
   if (summary.childCount) {
     block(`Kids starters (${summary.childCount} children)`, summary.kidsStarters);
     block("Kids mains", summary.kidsMains);

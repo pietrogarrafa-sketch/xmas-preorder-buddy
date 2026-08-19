@@ -26,9 +26,9 @@ export function KitchenSummary({ guests }: { guests: Guest[] }) {
         {INCLUDED_STARTER.name} (incluso per tutti gli adulti):{" "}
         <span className="tabular-nums">{summary.adultCount}</span>
       </p>
-      <Block title="Antipasti" rows={summary.starters} />
-      <Block title="Secondi" rows={summary.mains} />
-      <Block title="Dolci" rows={summary.desserts} />
+      <Block title="Starters" rows={summary.starters} />
+      <Block title="Mains" rows={summary.mains} />
+      <Block title="Desserts" rows={summary.desserts} />
       {summary.childCount > 0 ? (
         <>
           <p className="sm:col-span-3 border-t pt-4 text-sm font-semibold">
