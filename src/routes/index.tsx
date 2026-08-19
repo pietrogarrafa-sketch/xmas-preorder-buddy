@@ -50,7 +50,14 @@ import {
   type Guest,
   type GuestKind,
 } from "@/lib/menu";
-import { downloadOrderPdf, orderAsText, orderPdfFile, sharePdfFile } from "@/lib/order-export";
+import {
+  PLACE_CARD_THEMES,
+  downloadOrderPdf,
+  orderAsText,
+  orderPdfFile,
+  sharePdfFile,
+  type PlaceCardTheme,
+} from "@/lib/order-export";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -111,6 +118,7 @@ function PreOrderPage() {
   const [pdfFile, setPdfFile] = useState<File | null>(null);
   const [pdfError, setPdfError] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  const [cardTheme, setCardTheme] = useState<PlaceCardTheme>("classic");
 
   // Restore any work in progress so a refresh never loses an order.
   useEffect(() => {
@@ -231,7 +239,7 @@ function PreOrderPage() {
   const handlePdf = async () => {
     if (!requireGuests()) return;
     try {
-      await downloadOrderPdf(booking, guests);
+      await downloadOrderPdf(booking, guests, cardTheme);
       toast.success("PDF downloaded");
     } catch {
       toast.error("Could not generate the PDF. Please try again.");
@@ -270,7 +278,7 @@ function PreOrderPage() {
     setPdfFile(null);
     setPdfError(false);
     setConfirmOpen(true);
-    orderPdfFile(booking, guests)
+    orderPdfFile(booking, guests, cardTheme)
       .then(setPdfFile)
       .catch(() => {
         setPdfFile(null);
@@ -540,6 +548,29 @@ function PreOrderPage() {
             </h2>
             <div className="mt-4">
               <KitchenSummary guests={guests} />
+            </div>
+          </section>
+
+          <section className="no-print mt-6 rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)] sm:p-6">
+            <h2 className="text-lg font-semibold">Place card design</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Choose the Christmas look used for the guest place cards in the PDF.
+            </p>
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {PLACE_CARD_THEMES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  onClick={() => setCardTheme(t.id)}
+                  aria-pressed={cardTheme === t.id}
+                  className={`rounded-xl border p-3 text-left transition-colors ${
+                    cardTheme === t.id ? "border-accent bg-accent/10" : "hover:bg-muted/40"
+                  }`}
+                >
+                  <span className="block font-display text-base font-semibold">{t.name}</span>
+                  <span className="mt-1 block text-xs text-muted-foreground">{t.description}</span>
+                </button>
+              ))}
             </div>
           </section>
 
