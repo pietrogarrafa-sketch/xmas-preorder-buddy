@@ -92,8 +92,10 @@ let logoCache: { dataUrl: string; width: number; height: number } | null | undef
 async function loadLogo() {
   if (logoCache !== undefined) return logoCache;
   try {
-    const logo = (await import("@/assets/lacasa-logo.png.asset.json")).default as { url: string };
+    const logo = (await import("@/assets/lacasa-logo-transparent.png.asset.json"))
+      .default as { url: string };
     const res = await fetch(logo.url);
+    if (!res.ok) throw new Error("logo fetch failed");
     const blob = await res.blob();
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
@@ -209,12 +211,18 @@ async function buildOrderPdf(
     y += 18;
   };
 
+  /** Centres letter-spaced text properly (jsPDF ignores charSpace when centring). */
+  const centredSpaced = (text: string, cx: number, ty: number, charSpace: number) => {
+    const w = doc.getTextWidth(text) + charSpace * Math.max(0, text.length - 1);
+    doc.text(text, cx - w / 2, ty, { charSpace });
+  };
+
   /** Masthead reproducing the on-screen header. */
   const masthead = (title: string, subtitle: string) => {
     doc.setFont("times", "italic");
     doc.setFontSize(11);
     doc.setTextColor(...GOLD);
-    doc.text("RISTORANTE", width / 2, y, { align: "center", charSpace: 3 });
+    centredSpaced("RISTORANTE", width / 2, y, 3);
     y += 30;
     doc.setFont("times", "bold");
     doc.setFontSize(34);
@@ -231,7 +239,7 @@ async function buildOrderPdf(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...MUTED);
-    doc.text(subtitle.toUpperCase(), width / 2, y, { align: "center", charSpace: 2.6 });
+    centredSpaced(subtitle.toUpperCase(), width / 2, y, 2.6);
     y += 22;
     rule();
   };
@@ -470,10 +478,12 @@ async function buildOrderPdf(
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
       doc.setTextColor(...CRANBERRY);
-      doc.text(isChild(guest) ? "CHILDREN'S MENU" : "ADULT MENU", x + cardWidth / 2, underlineY + 18, {
-        align: "center",
-        charSpace: 2,
-      });
+      centredSpaced(
+        isChild(guest) ? "CHILDREN'S MENU" : "ADULT MENU",
+        x + cardWidth / 2,
+        underlineY + 18,
+        2,
+      );
 
       foldGuide();
 
@@ -538,11 +548,11 @@ async function buildOrderPdf(
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
       doc.setTextColor(...GOLD_SOFT);
-      doc.text(
-        isChild(guest) ? "CHILDREN'S MENU · 25 DECEMBER 2026" : "CHRISTMAS DAY · 25 DECEMBER 2026",
+      centredSpaced(
+        isChild(guest) ? "CHILDREN'S MENU · 25 DEC 2026" : "CHRISTMAS DAY · 25 DEC 2026",
         x + cardWidth / 2,
         underlineY + 16,
-        { align: "center", charSpace: 1.6 },
+        1.6,
       );
 
       foldGuide();
@@ -594,10 +604,7 @@ async function buildOrderPdf(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(...MUTED);
-    doc.text("CHRISTMAS DAY 2026", x + cardWidth / 2, underlineY + 15, {
-      align: "center",
-      charSpace: 2.4,
-    });
+    centredSpaced("CHRISTMAS DAY 2026", x + cardWidth / 2, underlineY + 15, 2.4);
 
     foldGuide();
 
