@@ -14,7 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      preorders: {
+        Row: {
+          adult_count: number
+          child_count: number
+          created_at: string
+          customer_name: string
+          deposit_amount: number
+          email: string
+          guest_count: number
+          guests: Json
+          id: string
+          phone: string
+          service_date: string
+          service_time: string
+          table_notes: string
+          total_amount: number
+        }
+        Insert: {
+          adult_count?: number
+          child_count?: number
+          created_at?: string
+          customer_name: string
+          deposit_amount?: number
+          email?: string
+          guest_count?: number
+          guests?: Json
+          id?: string
+          phone?: string
+          service_date?: string
+          service_time?: string
+          table_notes?: string
+          total_amount?: number
+        }
+        Update: {
+          adult_count?: number
+          child_count?: number
+          created_at?: string
+          customer_name?: string
+          deposit_amount?: number
+          email?: string
+          guest_count?: number
+          guests?: Json
+          id?: string
+          phone?: string
+          service_date?: string
+          service_time?: string
+          table_notes?: string
+          total_amount?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
