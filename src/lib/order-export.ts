@@ -478,10 +478,12 @@ async function buildOrderPdf(
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
       doc.setTextColor(...CRANBERRY);
-      doc.text(isChild(guest) ? "CHILDREN'S MENU" : "ADULT MENU", x + cardWidth / 2, underlineY + 18, {
-        align: "center",
-        charSpace: 2,
-      });
+      centredSpaced(
+        isChild(guest) ? "CHILDREN'S MENU" : "ADULT MENU",
+        x + cardWidth / 2,
+        underlineY + 18,
+        2,
+      );
 
       foldGuide();
 
