@@ -92,8 +92,10 @@ let logoCache: { dataUrl: string; width: number; height: number } | null | undef
 async function loadLogo() {
   if (logoCache !== undefined) return logoCache;
   try {
-    const logo = (await import("@/assets/lacasa-logo.png.asset.json")).default as { url: string };
+    const logo = (await import("@/assets/lacasa-logo-transparent.png.asset.json"))
+      .default as { url: string };
     const res = await fetch(logo.url);
+    if (!res.ok) throw new Error("logo fetch failed");
     const blob = await res.blob();
     const dataUrl = await new Promise<string>((resolve, reject) => {
       const reader = new FileReader();
