@@ -239,7 +239,7 @@ async function buildOrderPdf(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(...MUTED);
-    doc.text(subtitle.toUpperCase(), width / 2, y, { align: "center", charSpace: 2.6 });
+    centredSpaced(subtitle.toUpperCase(), width / 2, y, 2.6);
     y += 22;
     rule();
   };
