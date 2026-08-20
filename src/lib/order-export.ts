@@ -211,6 +211,12 @@ async function buildOrderPdf(
     y += 18;
   };
 
+  /** Centres letter-spaced text properly (jsPDF ignores charSpace when centring). */
+  const centredSpaced = (text: string, cx: number, ty: number, charSpace: number) => {
+    const w = doc.getTextWidth(text) + charSpace * Math.max(0, text.length - 1);
+    doc.text(text, cx - w / 2, ty, { charSpace });
+  };
+
   /** Masthead reproducing the on-screen header. */
   const masthead = (title: string, subtitle: string) => {
     doc.setFont("times", "italic");
