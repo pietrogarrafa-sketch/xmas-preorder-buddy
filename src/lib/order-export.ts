@@ -604,10 +604,7 @@ async function buildOrderPdf(
     doc.setFont("helvetica", "normal");
     doc.setFontSize(7);
     doc.setTextColor(...MUTED);
-    doc.text("CHRISTMAS DAY 2026", x + cardWidth / 2, underlineY + 15, {
-      align: "center",
-      charSpace: 2.4,
-    });
+    centredSpaced("CHRISTMAS DAY 2026", x + cardWidth / 2, underlineY + 15, 2.4);
 
     foldGuide();
 
