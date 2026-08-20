@@ -222,7 +222,7 @@ async function buildOrderPdf(
     doc.setFont("times", "italic");
     doc.setFontSize(11);
     doc.setTextColor(...GOLD);
-    doc.text("RISTORANTE", width / 2, y, { align: "center", charSpace: 3 });
+    centredSpaced("RISTORANTE", width / 2, y, 3);
     y += 30;
     doc.setFont("times", "bold");
     doc.setFontSize(34);
