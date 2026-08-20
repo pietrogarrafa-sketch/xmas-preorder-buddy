@@ -548,11 +548,11 @@ async function buildOrderPdf(
       doc.setFont("helvetica", "bold");
       doc.setFontSize(7);
       doc.setTextColor(...GOLD_SOFT);
-      doc.text(
-        isChild(guest) ? "CHILDREN'S MENU · 25 DECEMBER 2026" : "CHRISTMAS DAY · 25 DECEMBER 2026",
+      centredSpaced(
+        isChild(guest) ? "CHILDREN'S MENU · 25 DEC 2026" : "CHRISTMAS DAY · 25 DEC 2026",
         x + cardWidth / 2,
         underlineY + 16,
-        { align: "center", charSpace: 1.6 },
+        1.6,
       );
 
       foldGuide();
