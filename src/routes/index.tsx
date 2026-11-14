@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -58,6 +58,7 @@ import {
   sharePdfFile,
   type PlaceCardTheme,
 } from "@/lib/order-export";
+import { savePreorder } from "@/lib/preorders.functions";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -252,6 +253,29 @@ function PreOrderPage() {
     toast.success("Order copied to clipboard");
   };
 
+  const preorderPayload = () => ({
+    customerName: booking.customerName.trim() || "Unnamed customer",
+    phone: booking.phone.trim(),
+    email: booking.email.trim(),
+    serviceTime: booking.time,
+    tableNotes: booking.tableNotes.trim(),
+    adultCount: guests.filter((g) => !isChild(g)).length,
+    childCount: guests.filter(isChild).length,
+    totalAmount: total,
+    depositAmount: guests.length * DEPOSIT_PER_PERSON,
+    guests: guests.map((g) => ({
+      id: g.id,
+      name: g.name,
+      kind: (g.kind ?? "adult") as "adult" | "child",
+      starter: g.starter,
+      main: g.main,
+      dessert: g.dessert,
+      cooking: g.cooking,
+      lobster: Boolean(g.lobster),
+      notes: g.notes ?? "",
+    })),
+  });
+
   const handleWhatsApp = async () => {
     if (!requireGuests()) return;
     setSending(true);
@@ -264,7 +288,10 @@ function PreOrderPage() {
         toast.error("This browser cannot attach files. Download the PDF and attach it in WhatsApp.");
         return;
       }
-      toast.success("PDF shared — pick WhatsApp in the share sheet");
+      // Saving needs no click gesture, so it runs after the share sheet closes.
+      const stored = await savePreorder({ data: preorderPayload() });
+      if (stored.ok) toast.success("PDF shared — order saved for the restaurant");
+      else toast.warning("PDF shared, but the order could not be saved");
       setConfirmOpen(false);
     } catch {
       toast.error("Could not share the PDF. Please try again.");
@@ -727,6 +754,13 @@ function PreOrderPage() {
           </p>
         </DialogContent>
       </Dialog>
+
+      <p className="no-print mt-10 text-center text-xs text-muted-foreground">
+        Restaurant staff:{" "}
+        <Link to="/orders" className="underline underline-offset-4 hover:text-accent">
+          view saved pre-orders
+        </Link>
+      </p>
     </main>
   );
 }

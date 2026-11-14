@@ -26,6 +26,19 @@ const payloadSchema = z.object({
   guests: z.array(guestSchema).min(1).max(200),
 });
 
+/** One guest's choices as stored in the order's JSON column. */
+export type SavedGuest = {
+  id: string;
+  name: string;
+  kind?: "adult" | "child" | undefined;
+  starter: string;
+  main: string;
+  dessert: string;
+  cooking?: string | undefined;
+  lobster?: boolean | undefined;
+  notes?: string | undefined;
+};
+
 export type SavedPreorder = {
   id: string;
   created_at: string;
@@ -39,7 +52,7 @@ export type SavedPreorder = {
   guest_count: number;
   total_amount: number;
   deposit_amount: number;
-  guests: unknown[];
+  guests: SavedGuest[];
 };
 
 /** Stores a submitted pre-order. Public: the booking form has no login. */
@@ -83,5 +96,11 @@ export const listPreorders = createServerFn({ method: "POST" })
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw new Error("Could not load orders");
-    return { ok: true as const, orders: (rows ?? []) as unknown as SavedPreorder[] };
+    return {
+      ok: true as const,
+      orders: (rows ?? []).map((row) => ({
+        ...row,
+        guests: Array.isArray(row.guests) ? (row.guests as SavedGuest[]) : [],
+      })) as SavedPreorder[],
+    };
   });
