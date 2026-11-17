@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { orderSchema, orderTotal, type Guest } from "./menu-party";
 
 const guestSchema = z.object({
   id: z.string(),
@@ -37,6 +38,8 @@ export type SavedGuest = {
   cooking?: string | undefined;
   lobster?: boolean | undefined;
   notes?: string | undefined;
+  sauce?: string | undefined;
+  pizzaName?: string | undefined;
 };
 
 export type SavedPreorder = {
@@ -46,6 +49,8 @@ export type SavedPreorder = {
   phone: string;
   email: string;
   service_time: string;
+  service_date: string;
+  event_type: string;
   table_notes: string;
   adult_count: number;
   child_count: number;
@@ -81,9 +86,28 @@ export const savePreorder = createServerFn({ method: "POST" })
     return { ok: true as const, id: row.id as string };
   });
 
+export const savePartyPreorder = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => orderSchema().parse(input))
+  .handler(async ({ data }) => {
+    // Revalidate against the server clock; never accept client-supplied totals or dates.
+    const order = orderSchema().parse(data);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin.from("preorders").insert({
+      event_type: "christmas_party", service_date: order.booking.date,
+      customer_name: order.booking.customerName, phone: order.booking.phone,
+      email: order.booking.email, service_time: order.booking.time,
+      table_notes: order.booking.tableNotes, adult_count: order.guests.length,
+      child_count: 0, guest_count: order.guests.length, total_amount: orderTotal(order.guests),
+      deposit_amount: 0,
+      guests: order.guests.map((g: Guest) => ({ ...g, cooking: g.main === "Sirloin Steak" ? g.cooking : undefined, sauce: g.main === "Sirloin Steak" ? g.sauce : undefined, pizzaName: g.main === "Pizza of Choice" ? g.pizzaName : undefined })),
+    }).select("id").single();
+    if (error || !row) return { ok: false as const };
+    return { ok: true as const, id: row.id };
+  });
+
 /** Staff-only listing, guarded by the restaurant passcode. */
 export const listPreorders = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ passcode: z.string().min(1) }).parse(input))
+  .inputValidator((input: unknown) => z.object({ passcode: z.string().min(1).max(128) }).parse(input))
   .handler(async ({ data }) => {
     const expected = process.env["STAFF_PASSCODE"];
     if (!expected || data.passcode !== expected) {
@@ -93,6 +117,7 @@ export const listPreorders = createServerFn({ method: "POST" })
     const { data: rows, error } = await supabaseAdmin
       .from("preorders")
       .select("*")
+      .eq("event_type", "christmas_party")
       .order("created_at", { ascending: false })
       .limit(500);
     if (error) throw new Error("Could not load orders");

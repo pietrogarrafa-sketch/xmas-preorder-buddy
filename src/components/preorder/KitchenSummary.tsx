@@ -1,4 +1,4 @@
-import { INCLUDED_STARTER, kitchenSummary, type Guest } from "@/lib/menu";
+import { kitchenSummary, type Guest } from "@/lib/menu-party";
 
 function Block({ title, rows }: { title: string; rows: [string, number][] }) {
   return (
@@ -22,28 +22,9 @@ export function KitchenSummary({ guests }: { guests: Guest[] }) {
 
   return (
     <div className="grid gap-6 sm:grid-cols-3">
-      <p className="sm:col-span-3 rounded-lg border border-accent/50 bg-accent/10 px-3 py-2 text-sm font-medium">
-        {INCLUDED_STARTER.name} (incluso per tutti gli adulti):{" "}
-        <span className="tabular-nums">{summary.adultCount}</span>
-      </p>
       <Block title="Starters" rows={summary.starters} />
       <Block title="Mains" rows={summary.mains} />
       <Block title="Desserts" rows={summary.desserts} />
-      {summary.childCount > 0 ? (
-        <>
-          <p className="sm:col-span-3 border-t pt-4 text-sm font-semibold">
-            Menù bambini — <span className="tabular-nums">{summary.childCount}</span>
-          </p>
-          <Block title="Kids · Starters" rows={summary.kidsStarters} />
-          <Block title="Kids · Mains" rows={summary.kidsMains} />
-          <Block title="Kids · Desserts" rows={summary.kidsDesserts} />
-        </>
-      ) : null}
-      {summary.lobsters > 0 ? (
-        <p className="sm:col-span-3 text-sm font-medium">
-          Half Lobster in Garlic Butter: <span className="tabular-nums">{summary.lobsters}</span>
-        </p>
-      ) : null}
       {summary.notes.length > 0 ? (
         <div className="sm:col-span-3">
           <h4 className="text-xs font-semibold uppercase tracking-widest text-destructive">

@@ -8,35 +8,35 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { COOKING_LEVELS, LOBSTER_SUPPLEMENT, type CookingLevel } from "@/lib/menu";
+import { COOKING_LEVELS, SAUCES, type CookingLevel, type Sauce } from "@/lib/menu-party";
 import { cn } from "@/lib/utils";
 
 type Props = {
   open: boolean;
   dishName: string;
   initialCooking?: CookingLevel | undefined;
-  initialLobster?: boolean | undefined;
+  initialSauce?: Sauce | undefined;
   onCancel: () => void;
-  onConfirm: (cooking: CookingLevel, lobster: boolean) => void;
+  onConfirm: (cooking: CookingLevel, sauce: Sauce) => void;
 };
 
 export function SteakDialog({
   open,
   dishName,
   initialCooking,
-  initialLobster,
+  initialSauce,
   onCancel,
   onConfirm,
 }: Props) {
   const [cooking, setCooking] = useState<CookingLevel | undefined>(initialCooking);
-  const [lobster, setLobster] = useState(Boolean(initialLobster));
+  const [sauce, setSauce] = useState<Sauce | undefined>(initialSauce);
 
   useEffect(() => {
     if (open) {
       setCooking(initialCooking);
-      setLobster(Boolean(initialLobster));
+      setSauce(initialSauce);
     }
-  }, [open, initialCooking, initialLobster]);
+  }, [open, initialCooking, initialSauce]);
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
@@ -49,7 +49,7 @@ export function SteakDialog({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {COOKING_LEVELS.map((level) => (
-              <button
+              <Button variant="outline" aria-pressed={cooking === level}
                 key={level}
                 type="button"
                 onClick={() => setCooking(level)}
@@ -61,28 +61,18 @@ export function SteakDialog({
                 )}
               >
                 {level}
-              </button>
+              </Button>
             ))}
           </div>
 
-          <button
-            type="button"
-            onClick={() => setLobster((v) => !v)}
-            className={cn(
-              "flex w-full items-center justify-between rounded-lg border px-4 py-3 text-left text-sm transition-colors",
-              lobster ? "border-accent bg-accent/10" : "border-border bg-card hover:border-accent/60",
-            )}
-          >
-            <span className="font-medium">Add Half Lobster in Garlic Butter</span>
-            <span className="font-semibold text-accent">+£{LOBSTER_SUPPLEMENT}</span>
-          </button>
+          <div className="grid grid-cols-2 gap-2">{SAUCES.map(value => <Button key={value} variant={sauce === value ? "default" : "outline"} aria-pressed={sauce === value} onClick={() => setSauce(value)}>{value}</Button>)}</div>
         </div>
 
         <DialogFooter className="gap-2 sm:gap-2">
           <Button variant="outline" onClick={onCancel}>
             Cancel
           </Button>
-          <Button disabled={!cooking} onClick={() => cooking && onConfirm(cooking, lobster)}>
+          <Button disabled={!cooking || !sauce} onClick={() => cooking && sauce && onConfirm(cooking, sauce)}>
             Confirm
           </Button>
         </DialogFooter>

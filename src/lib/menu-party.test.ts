@@ -1,0 +1,18 @@
+import { describe, expect, it } from "vitest";
+import { dateError, guestSchema, MENU, orderSchema, orderTotal, mainLabel, type Guest } from "./menu-party";
+
+const now = new Date("2026-11-14T13:41:00Z");
+const guest: Guest = { id: "00000000-0000-4000-8000-000000000001", name: "Alex", starter: "Gamberoni Luciana", main: "Traditional Turkey", dessert: "Traditional Tiramisu" };
+const booking = { customerName: "Party organiser", date: "2026-11-23", time: "13:00", phone: "07700123456", email: "", tableNotes: "" };
+describe("Christmas Party booking rules", () => {
+  it("charges exactly £45.95 per guest, £459.50 for ten", () => { expect(orderTotal([guest])).toBe(45.95); expect(orderTotal(Array(10).fill(guest))).toBe(459.50); });
+  it("allows 23 November 2026 inclusive but not 22 November", () => { expect(dateError("2026-11-23", now)).toBeNull(); expect(dateError("2026-11-22", now)).not.toBeNull(); });
+  it("allows 23 December 2026 inclusive but not 24 December", () => { expect(dateError("2026-12-23", now)).toBeNull(); expect(dateError("2026-12-24", now)).not.toBeNull(); });
+  it("requires ten guests, rejecting nine", () => { expect(orderSchema(now).safeParse({ booking, guests: Array(10).fill(guest) }).success).toBe(true); expect(orderSchema(now).safeParse({ booking, guests: Array(9).fill(guest) }).success).toBe(false); });
+  it("accepts seven days advance but rejects six", () => { expect(dateError("2026-11-23", new Date("2026-11-16T23:59:00Z"))).toBeNull(); expect(dateError("2026-11-23", new Date("2026-11-17T00:00:00Z"))).not.toBeNull(); });
+  it("uses London calendar days even near summer-time midnight", () => { expect(dateError("2026-11-23", new Date("2026-11-17T00:01:00Z"))).not.toBeNull(); });
+  it("accepts any valid time of day", () => { for (const time of ["00:00", "09:00", "23:59"]) expect(orderSchema(now).safeParse({ booking: { ...booking, time }, guests: Array(10).fill(guest) }).success).toBe(true); });
+  it("requires a supplied pizza name and preserves it", () => { expect(guestSchema.safeParse({ ...guest, main: "Pizza of Choice" }).success).toBe(false); expect(guestSchema.safeParse({ ...guest, main: "Pizza of Choice", pizzaName: "Guest's a la carte pizza" }).success).toBe(true); expect(mainLabel({ ...guest, main: "Pizza of Choice", pizzaName: "Diavola" })).toBe("Pizza: Diavola"); });
+  it("requires steak cooking and plain or peppercorn sauce", () => { expect(guestSchema.safeParse({ ...guest, main: "Sirloin Steak", cooking: "Medium" }).success).toBe(false); for (const sauce of ["Plain", "Peppercorn sauce"]) expect(guestSchema.safeParse({ ...guest, main: "Sirloin Steak", cooking: "Medium Rare", sauce }).success).toBe(true); expect(guestSchema.safeParse({ ...guest, main: "Sirloin Steak", cooking: "Medium", sauce: "Madeira" }).success).toBe(false); });
+  it("only accepts the exact party menu courses", () => { expect(MENU.starter.map(d => d.name)).toEqual(["Gamberoni Luciana", "Chicken Liver Pate", "Polpette della Nonna", "Costolette di Manzo", "Avocado Tricolore"]); expect(MENU.main.map(d => d.name)).toEqual(["Tagliolini Amatriciana", "Sirloin Steak", "Traditional Turkey", "Rigatoni alla Norma", "Branzino", "Pizza of Choice"]); expect(MENU.dessert.map(d => d.name)).toEqual(["Traditional Tiramisu", "Amaretti & Salted Caramel Cheesecake", "Christmas Pudding", "Vanilla Ice Cream"]); expect(guestSchema.safeParse({ ...guest, starter: "Arancino al Tartufo" }).success).toBe(false); });
+});

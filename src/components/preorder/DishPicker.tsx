@@ -1,39 +1,38 @@
 import { Check, Leaf } from "lucide-react";
-import type { Course, Dish, GuestKind } from "@/lib/menu";
-import { COURSE_LABEL, menuFor } from "@/lib/menu";
+import type { Course, Dish } from "@/lib/menu-party";
+import { COURSE_LABEL, MENU } from "@/lib/menu-party";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type Props = {
   course: Course;
   selected: string;
-  kind?: GuestKind;
   onSelect: (dish: Dish) => void;
 };
 
-export function DishPicker({ course, selected, kind = "adult", onSelect }: Props) {
+export function DishPicker({ course, selected, onSelect }: Props) {
   return (
     <section className="space-y-3">
       <div className="flex items-center gap-3">
         <h3 className="font-display text-lg font-semibold tracking-tight">
           {COURSE_LABEL[course]}
-          {kind === "child" ? " · Bambini" : ""}
         </h3>
         <div className="gold-rule flex-1" />
         <span className="text-xs uppercase tracking-widest text-muted-foreground">Choose one</span>
       </div>
 
       <div className="grid gap-2 sm:grid-cols-2">
-        {menuFor(kind)[course].map((dish) => {
+        {MENU[course].map((dish) => {
 
           const isSelected = selected === dish.name;
           return (
-            <button
+            <Button variant="outline"
               key={dish.name}
               type="button"
               onClick={() => onSelect(dish)}
               aria-pressed={isSelected}
               className={cn(
-                "group relative rounded-xl border px-4 py-3 text-left transition-all",
+                "group relative h-auto whitespace-normal rounded-lg border px-4 py-3 text-left transition-all",
                 isSelected
                   ? "border-accent bg-accent/10 shadow-[var(--shadow-gold)]"
                   : "border-border bg-card hover:border-accent/60 hover:bg-accent/5",
@@ -54,7 +53,7 @@ export function DishPicker({ course, selected, kind = "adult", onSelect }: Props
                   <Leaf className="mt-0.5 size-4 shrink-0 text-primary/60" aria-label="Vegetarian" />
                 ) : null}
               </span>
-            </button>
+            </Button>
           );
         })}
       </div>

@@ -80,16 +80,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "La Casa · Christmas Day Pre-Order 2026" },
+      { title: "La Casa · Christmas Party Pre-Order 2026" },
       {
         name: "description",
-        content: "Christmas Day set menu pre-order tool for La Casa restaurant.",
+        content: "Christmas Party set menu pre-order tool for La Casa restaurant.",
       },
       { name: "author", content: "La Casa" },
-      { property: "og:title", content: "La Casa · Christmas Day Pre-Order 2026" },
+      { property: "og:title", content: "La Casa · Christmas Party Pre-Order 2026" },
       {
         property: "og:description",
-        content: "Christmas Day set menu pre-order tool for La Casa restaurant.",
+        content: "Christmas Party set menu pre-order tool for La Casa restaurant.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

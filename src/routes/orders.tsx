@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ChevronDown, Copy, Lock, Printer, ReceiptText, Users } from "lucide-react";
@@ -7,7 +8,7 @@ import logo from "@/assets/lacasa-logo.png.asset.json";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { listPreorders, type SavedGuest, type SavedPreorder } from "@/lib/preorders.functions";
-import { formatMoney } from "@/lib/menu";
+import { formatMoney, formatDate } from "@/lib/menu-party";
 
 export const Route = createFileRoute("/orders")({
   head: () => ({
@@ -15,12 +16,12 @@ export const Route = createFileRoute("/orders")({
       { title: "La Casa · Saved Christmas Pre-Orders" },
       {
         name: "description",
-        content: "Staff-only ledger of Christmas Day pre-orders taken at La Casa.",
+        content: "Staff-only ledger of Christmas Party pre-orders taken at La Casa.",
       },
       { property: "og:title", content: "La Casa · Saved Christmas Pre-Orders" },
       {
         property: "og:description",
-        content: "Staff-only ledger of Christmas Day pre-orders taken at La Casa.",
+        content: "Staff-only ledger of Christmas Party pre-orders taken at La Casa.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
@@ -30,16 +31,16 @@ export const Route = createFileRoute("/orders")({
 });
 
 function guestLine(g: SavedGuest) {
-  const extras = [g.cooking, g.lobster ? "+ Half Lobster" : null].filter(Boolean);
-  const main = extras.length ? `${g.main} (${extras.join(", ")})` : g.main;
+  const extras = [g.cooking, g.sauce].filter(Boolean);
+  const main = g.main === "Pizza of Choice" ? `Pizza: ${g.pizzaName}` : extras.length ? `${g.main} (${extras.join(", ")})` : g.main;
   return `${g.starter} · ${main} · ${g.dessert}`;
 }
 
 function orderAsText(order: SavedPreorder) {
   const lines = [
-    `LA CASA · CHRISTMAS DAY PRE-ORDER`,
+    `LA CASA · CHRISTMAS PARTY PRE-ORDER`,
     `Taken ${new Date(order.created_at).toLocaleString("en-GB")}`,
-    `${order.customer_name} · ${order.service_time}`,
+    `${order.customer_name} · ${formatDate(order.service_date)} · ${order.service_time}`,
     [order.phone, order.email].filter(Boolean).join(" · "),
     `Table notes: ${order.table_notes || "—"}`,
     "",
@@ -50,13 +51,14 @@ function orderAsText(order: SavedPreorder) {
         }`,
     ),
     "",
-    `Covers: ${order.guest_count} (${order.adult_count} adults, ${order.child_count} children)`,
-    `Total: ${formatMoney(order.total_amount)} · Deposit: ${formatMoney(order.deposit_amount)}`,
+    `Covers: ${order.guest_count}`,
+    `Total: ${formatMoney(order.total_amount)}`,
   ];
   return lines.filter((l) => l !== undefined).join("\n");
 }
 
 function OrdersPage() {
+  const fetchOrders = useServerFn(listPreorders);
   const [passcode, setPasscode] = useState("");
   const [orders, setOrders] = useState<SavedPreorder[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -69,7 +71,7 @@ function OrdersPage() {
     }
     setLoading(true);
     try {
-      const result = await listPreorders({ data: { passcode: passcode.trim() } });
+      const result = await fetchOrders({ data: { passcode: passcode.trim() } });
       if (!result.ok) {
         setOrders(null);
         toast.error("Wrong passcode — try again.");
@@ -99,18 +101,18 @@ function OrdersPage() {
         <img src={logo.url} alt="La Casa restaurant" className="mx-auto h-16 w-auto object-contain" />
         <h1 className="script-title mt-3 text-4xl sm:text-5xl">Saved Pre-Orders</h1>
         <p className="mt-2 text-xs uppercase tracking-[0.35em] text-muted-foreground">
-          Christmas Day 2026 · staff only
+          Christmas Party 2026 · staff only
         </p>
         <div className="gold-rule mx-auto mt-5 w-40" />
       </header>
 
-      <section className="mt-8 rounded-2xl border bg-card p-5 shadow-[var(--shadow-card)] sm:p-6">
+      <section className="mt-8 rounded-lg border bg-card p-5 shadow-[var(--shadow-card)] sm:p-6">
         <h2 className="flex items-center gap-2 text-lg font-semibold">
           <Lock className="size-5 text-accent" /> Staff passcode
         </h2>
         <div className="mt-4 flex flex-wrap gap-2">
           <Input
-            type="password"
+            type="password" aria-label="Staff passcode" maxLength={128}
             value={passcode}
             onChange={(e) => setPasscode(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && load()}
@@ -155,23 +157,22 @@ function OrdersPage() {
             {orders.map((order) => {
               const isOpen = open === order.id;
               return (
-                <li key={order.id} className="rounded-2xl border bg-card shadow-[var(--shadow-card)]">
-                  <button
+                <li key={order.id} className="rounded-lg border bg-card shadow-[var(--shadow-card)]">
+                  <Button variant="ghost"
                     type="button"
                     onClick={() => setOpen(isOpen ? null : order.id)}
-                    className="flex w-full flex-wrap items-start justify-between gap-3 p-5 text-left"
+                    className="flex h-auto w-full whitespace-normal flex-wrap items-start justify-between gap-3 p-5 text-left"
                   >
                     <div>
                       <p className="font-display text-base font-semibold">
                         {order.customer_name}
                         <span className="ml-2 text-sm font-normal text-muted-foreground">
-                          {order.service_time}
+                          {formatDate(order.service_date)} · {order.service_time}
                         </span>
                       </p>
                       <p className="mt-0.5 text-sm text-muted-foreground">
                         {new Date(order.created_at).toLocaleString("en-GB")} ·{" "}
-                        {order.guest_count} covers ({order.adult_count} adults,{" "}
-                        {order.child_count} children)
+                        Christmas Party · {order.guest_count} covers
                       </p>
                       {order.table_notes ? (
                         <p className="mt-1 text-sm text-destructive">Table: {order.table_notes}</p>
@@ -180,9 +181,7 @@ function OrdersPage() {
                     <div className="flex items-center gap-3">
                       <div className="text-right">
                         <p className="font-semibold tabular-nums">{formatMoney(order.total_amount)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          deposit {formatMoney(order.deposit_amount)}
-                        </p>
+
                       </div>
                       <ChevronDown
                         className={`size-4 shrink-0 text-muted-foreground transition-transform ${
@@ -190,7 +189,7 @@ function OrdersPage() {
                         }`}
                       />
                     </div>
-                  </button>
+                  </Button>
 
                   {isOpen ? (
                     <div className="border-t px-5 py-4">
@@ -255,7 +254,7 @@ function OrdersPage() {
 
 function Stat({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border bg-card p-4 text-center shadow-[var(--shadow-card)]">
+    <div className="rounded-lg border bg-card p-4 text-center shadow-[var(--shadow-card)]">
       <p className="text-xs uppercase tracking-widest text-muted-foreground">{label}</p>
       <p className="mt-1 font-display text-2xl font-semibold tabular-nums">{value}</p>
     </div>

@@ -22,6 +22,7 @@ export type Database = {
           customer_name: string
           deposit_amount: number
           email: string
+          event_type: string
           guest_count: number
           guests: Json
           id: string
@@ -38,6 +39,7 @@ export type Database = {
           customer_name: string
           deposit_amount?: number
           email?: string
+          event_type?: string
           guest_count?: number
           guests?: Json
           id?: string
@@ -54,6 +56,7 @@ export type Database = {
           customer_name?: string
           deposit_amount?: number
           email?: string
+          event_type?: string
           guest_count?: number
           guests?: Json
           id?: string
